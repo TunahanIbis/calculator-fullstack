@@ -8,7 +8,7 @@ interface Props {
   onClear: () => void;
 }
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 3;
 
 /** A most-recent-first log of successful calculations, paginated. */
 export function HistoryList({ entries, onClear }: Props) {
@@ -44,17 +44,22 @@ export function HistoryList({ entries, onClear }: Props) {
       ) : (
         <>
           <ul className="history__list">
-            {visible.map((entry) => (
-              <li key={entry.id} className="history__item">
-                <span className="history__expr">{entry.expression}</span>
-                <span className="history__eq" aria-hidden="true">
-                  =
-                </span>
-                <span className="history__result">
-                  {formatNumber(entry.result)}
-                </span>
-              </li>
-            ))}
+            {visible.map((entry) => {
+              const result = formatNumber(entry.result);
+              return (
+                <li key={entry.id} className="history__item">
+                  <span className="history__expr" title={entry.expression}>
+                    {entry.expression}
+                  </span>
+                  <span className="history__eq" aria-hidden="true">
+                    =
+                  </span>
+                  <span className="history__result" title={result}>
+                    {result}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
 
           {pageCount > 1 ? (

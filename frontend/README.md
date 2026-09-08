@@ -51,7 +51,7 @@ precedence and no parentheses.
 - **Keyboard:** `0`–`9`, `.` / `,`, `+ - * / ^ %`, `Enter` / `=`, `Backspace`,
   `Esc` / `Delete`. Keystrokes carrying a modifier (Ctrl/⌘/Alt) are ignored so
   browser shortcuts still work.
-- Every completed step is logged to a paginated **history** (4 per page).
+- Every completed step is logged to a paginated **history** (3 per page).
 
 Each press is one API call. A division by zero, a negative square root, or an
 overflow comes back from the server as a friendly message on the display; the
@@ -117,7 +117,7 @@ All files          |   100   |   ~95    |   100   |   100
   keystrokes typed **while a chained step is still resolving are buffered and
   replayed** (a deferred promise proves `25×18+40=` never loses a digit).
 - **`components/Keypad`**, every key renders and emits the right action.
-- **`components/HistoryList`**, empty state, 4-per-page pagination, newer /
+- **`components/HistoryList`**, empty state, 3-per-page pagination, newer /
   older navigation, `onClear`.
 - **`components/Calculator`**, full render: click and keyboard entry, the
   formatted result and expression line, division-by-zero shows the friendly
@@ -161,7 +161,7 @@ message sits in the value slot rather than pushing content, and
 `scrollbar-gutter: stable` keeps the centred card from shifting when a scrollbar
 appears. Entrances use short fades that collapse under `prefers-reduced-motion`.
 
-**No component library.** ~330 lines of hand-written CSS with custom properties
+**No component library.** ~400 lines of hand-written CSS with custom properties
 and a `prefers-color-scheme` dark theme; ~64 kB gzipped JS.
 
 **Trade-offs.** State is in-memory, so history resets on refresh. There is no
