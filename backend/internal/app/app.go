@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tunahanibis/calculator-fullstack/backend/internal/config"
-	"github.com/tunahanibis/calculator-fullstack/backend/internal/httpapi"
+	"github.com/TunahanIbis/calculator-fullstack/backend/internal/config"
+	"github.com/TunahanIbis/calculator-fullstack/backend/internal/httpapi"
 )
 
 // NewServer builds the *http.Server for the given configuration. The handler

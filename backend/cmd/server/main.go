@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/tunahanibis/calculator-fullstack/backend/internal/app"
-	"github.com/tunahanibis/calculator-fullstack/backend/internal/config"
+	"github.com/TunahanIbis/calculator-fullstack/backend/internal/app"
+	"github.com/TunahanIbis/calculator-fullstack/backend/internal/config"
 )
 
 func main() {

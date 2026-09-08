@@ -17,7 +17,7 @@ export function App() {
 
       <footer className="page__footer">
         <a
-          href="https://github.com/tunahanibis/calculator-fullstack"
+          href="https://github.com/TunahanIbis/calculator-fullstack"
           target="_blank"
           rel="noreferrer"
         >

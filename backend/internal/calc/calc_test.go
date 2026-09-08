@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/tunahanibis/calculator-fullstack/backend/internal/calc"
+	"github.com/TunahanIbis/calculator-fullstack/backend/internal/calc"
 )
 
 // almostEqual compares floats with a small tolerance so that results affected

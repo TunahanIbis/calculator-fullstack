@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tunahanibis/calculator-fullstack/backend/internal/config"
+	"github.com/TunahanIbis/calculator-fullstack/backend/internal/config"
 )
 
 func TestLoad_Defaults(t *testing.T) {

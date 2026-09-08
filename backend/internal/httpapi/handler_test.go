@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tunahanibis/calculator-fullstack/backend/internal/httpapi"
+	"github.com/TunahanIbis/calculator-fullstack/backend/internal/httpapi"
 )
 
 // newServer spins up the full router (with middleware) on an httptest server.

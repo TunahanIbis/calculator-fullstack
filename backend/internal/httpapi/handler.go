@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/tunahanibis/calculator-fullstack/backend/internal/calc"
+	"github.com/TunahanIbis/calculator-fullstack/backend/internal/calc"
 )
 
 // maxBodyBytes caps the size of a request body we are willing to read. The

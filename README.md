@@ -70,7 +70,7 @@ No databases, message brokers, or other services are required. The backend has
 ### Option A: Docker (whole stack, one command)
 
 ```bash
-git clone https://github.com/tunahanibis/calculator-fullstack.git
+git clone https://github.com/TunahanIbis/calculator-fullstack.git
 cd calculator-fullstack
 
 docker compose up --build
