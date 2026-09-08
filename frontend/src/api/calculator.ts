@@ -2,8 +2,11 @@
  * Typed wrappers around the calculator service's operation endpoints.
  */
 
-import type { OperationId } from "../domain/operations";
+import type { RequestOpId } from "../domain/calculatorMachine";
 import { ApiError, postJson } from "./client";
+
+/** Identifier accepted by the operation endpoints (`add` … `sqrt`). */
+export type OperationId = RequestOpId;
 
 /** Success envelope returned by every operation endpoint. */
 export interface CalculationResult {

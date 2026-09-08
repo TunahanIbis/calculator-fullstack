@@ -1,25 +1,18 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { calculate, friendlyError } from "../api/calculator";
 import {
-  calculate,
-  friendlyError,
-  type CalculationResult,
-} from "../api/calculator";
-import {
-  getOperation,
-  formatExpression,
-  type OperationId,
-} from "../domain/operations";
-import {
-  parseOperand,
-  validateInputs,
-  type InputErrors,
-} from "../domain/validation";
+  INITIAL_STATE,
+  OP_SYMBOL,
+  displayValue,
+  expressionText,
+  reducer,
+  type MachineAction,
+  type MachineState,
+} from "../domain/calculatorMachine";
+import { formatNumber } from "../domain/format";
 
-export type Status = "idle" | "loading" | "success" | "error";
-
-/** Distinguishes a client-side validation failure from a server/API failure. */
-export type ErrorKind = "validation" | "api" | null;
+export type Status = "idle" | "loading" | "error";
 
 export interface HistoryEntry {
   id: number;
@@ -27,172 +20,112 @@ export interface HistoryEntry {
   result: number;
 }
 
-/** How many entries to keep; the UI paginates through them. */
 const HISTORY_LIMIT = 50;
 
-export interface CalculatorState {
-  operationId: OperationId;
-  rawA: string;
-  rawB: string;
+export interface CalculatorView {
+  /** Big line: current number or result. */
+  value: string;
+  /** Small line: the expression being built, or "". */
+  expression: string;
+  /** Present when the last calculation failed. */
+  error: string | null;
   status: Status;
-  result: CalculationResult | null;
-  /** Top-level error (API failure or "fix the fields" summary). */
-  errorMessage: string | null;
-  /** Whether `errorMessage` came from validation or from the API. */
-  errorKind: ErrorKind;
-  /** Per-field validation messages. */
-  fieldErrors: InputErrors;
+  busy: boolean;
   history: HistoryEntry[];
-}
-
-export interface CalculatorActions {
-  setOperation: (id: OperationId) => void;
-  setA: (value: string) => void;
-  setB: (value: string) => void;
-  /** Validate one field now (used on blur) without running the calculation. */
-  validateField: (field: "a" | "b") => void;
-  submit: () => Promise<void>;
-  reset: () => void;
+  /** Send a keypad/keyboard action into the calculator. */
+  dispatch: (action: MachineAction) => void;
   clearHistory: () => void;
 }
 
-const INITIAL: CalculatorState = {
-  operationId: "add",
-  rawA: "",
-  rawB: "",
-  status: "idle",
-  result: null,
-  errorMessage: null,
-  errorKind: null,
-  fieldErrors: {},
-  history: [],
-};
-
 /**
- * Owns all calculator state and the submit workflow: client-side validation,
- * the API call, and history. Components stay presentational.
+ * Wraps the pure calculator machine. The machine state lives in a ref so it is
+ * always synchronously current; a bump counter drives re-renders.
+ *
+ * When the machine records a `request`, an effect runs it against the API and
+ * feeds the answer back. Actions that arrive while a request is in flight are
+ * buffered and replayed once it settles, so fast typing such as `25×18+40=`
+ * never loses a keystroke.
  */
-export function useCalculator(): CalculatorState & CalculatorActions {
-  const [state, setState] = useState<CalculatorState>(INITIAL);
-  const nextHistoryId = useRef(1);
+export function useCalculator(): CalculatorView {
+  const stateRef = useRef<MachineState>(INITIAL_STATE);
+  const bufferRef = useRef<MachineAction[]>([]);
+  const [, setTick] = useState(0);
 
-  // Mirror of the latest state so `submit` never closes over a stale snapshot.
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const nextId = useRef(1);
 
-  const setOperation = useCallback((id: OperationId) => {
-    setState((s) => ({
-      ...s,
-      operationId: id,
-      status: "idle",
-      result: null,
-      errorMessage: null,
-      errorKind: null,
-      fieldErrors: {},
-    }));
+  const apply = useCallback((action: MachineAction) => {
+    stateRef.current = reducer(stateRef.current, action);
+    setTick((t) => t + 1);
   }, []);
 
-  const setA = useCallback((value: string) => {
-    setState((s) => ({
-      ...s,
-      rawA: value,
-      fieldErrors: { ...s.fieldErrors, a: undefined },
-      errorMessage: null,
-      errorKind: null,
-    }));
-  }, []);
-
-  const setB = useCallback((value: string) => {
-    setState((s) => ({
-      ...s,
-      rawB: value,
-      fieldErrors: { ...s.fieldErrors, b: undefined },
-      errorMessage: null,
-      errorKind: null,
-    }));
-  }, []);
-
-  const validateField = useCallback((field: "a" | "b") => {
-    setState((s) => {
-      if (field === "b" && getOperation(s.operationId).arity === 1) {
-        return s;
-      }
-      const raw = field === "a" ? s.rawA : s.rawB;
-      // Don't nag about an empty field on blur; submit still catches it.
-      const message =
-        raw.trim() === "" ? undefined : parseOperand(raw).error;
-      if (s.fieldErrors[field] === message) {
-        return s;
-      }
-      return { ...s, fieldErrors: { ...s.fieldErrors, [field]: message } };
-    });
-  }, []);
-
-  const reset = useCallback(() => {
-    setState((s) => ({ ...INITIAL, history: s.history, operationId: s.operationId }));
-  }, []);
-
-  const clearHistory = useCallback(() => {
-    setState((s) => ({ ...s, history: [] }));
-  }, []);
-
-  const submit = useCallback(async () => {
-    const snapshot = stateRef.current;
-    const operation = getOperation(snapshot.operationId);
-    const validation = validateInputs(operation, snapshot.rawA, snapshot.rawB);
-
-    if (!validation.ok) {
-      setState((s) => ({
-        ...s,
-        status: "error",
-        result: null,
-        fieldErrors: validation.errors,
-        errorMessage: "Please fix the highlighted field(s).",
-        errorKind: "validation",
-      }));
-      return;
+  const flushBuffer = useCallback(() => {
+    while (bufferRef.current.length > 0 && !stateRef.current.request) {
+      apply(bufferRef.current.shift() as MachineAction);
     }
+  }, [apply]);
 
-    setState((s) => ({
-      ...s,
-      status: "loading",
-      errorMessage: null,
-      errorKind: null,
-      fieldErrors: {},
-    }));
-
-    try {
-      const result = await calculate(operation.id, validation.a, validation.b);
-      setState((s) => ({
-        ...s,
-        status: "success",
-        result,
-        errorMessage: null,
-        errorKind: null,
-        history: [
-          {
-            id: nextHistoryId.current++,
-            expression: formatExpression(operation, validation.a, validation.b),
-            result: result.result,
-          },
-          ...s.history,
-        ].slice(0, HISTORY_LIMIT),
-      }));
-    } catch (error) {
-      setState((s) => ({
-        ...s,
-        status: "error",
-        result: null,
-        errorMessage: friendlyError(error),
-        errorKind: "api",
-      }));
-    }
-  }, []);
-
-  const actions = useMemo(
-    () => ({ setOperation, setA, setB, validateField, submit, reset, clearHistory }),
-    [setOperation, setA, setB, validateField, submit, reset, clearHistory],
+  const dispatch = useCallback(
+    (action: MachineAction) => {
+      if (stateRef.current.request) {
+        bufferRef.current.push(action);
+      } else {
+        apply(action);
+      }
+    },
+    [apply],
   );
 
-  return { ...state, ...actions };
+  const request = stateRef.current.request;
+
+  useEffect(() => {
+    if (!request) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const res = await calculate(request.op, request.a, request.b);
+        if (cancelled) return;
+        apply({ type: "resolve", result: res.result });
+        setHistory((h) =>
+          [
+            {
+              id: nextId.current++,
+              expression:
+                request.b != null
+                  ? `${formatNumber(request.a)} ${OP_SYMBOL[request.op]} ${formatNumber(request.b)}`
+                  : `${OP_SYMBOL[request.op]}${formatNumber(request.a)}`,
+              result: res.result,
+            },
+            ...h,
+          ].slice(0, HISTORY_LIMIT),
+        );
+      } catch (err) {
+        if (cancelled) return;
+        apply({ type: "reject", message: friendlyError(err) });
+      } finally {
+        if (!cancelled) flushBuffer();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [request, apply, flushBuffer]);
+
+  const clearHistory = useCallback(() => setHistory([]), []);
+
+  const state = stateRef.current;
+  const status: Status = request ? "loading" : state.error ? "error" : "idle";
+  return {
+    value: displayValue(state),
+    expression: expressionText(state),
+    error: state.error,
+    status,
+    busy: status === "loading",
+    history,
+    dispatch,
+    clearHistory,
+  };
 }

@@ -21,172 +21,125 @@ afterEach(() => {
 });
 
 describe("useCalculator", () => {
-  it("starts idle with add selected and no result", () => {
+  it("starts showing 0 with no history", () => {
     const { result } = renderHook(() => useCalculator());
-
-    expect(result.current.status).toBe("idle");
-    expect(result.current.operationId).toBe("add");
-    expect(result.current.result).toBeNull();
+    expect(result.current.value).toBe("0");
+    expect(result.current.expression).toBe("");
     expect(result.current.history).toEqual([]);
+    expect(result.current.status).toBe("idle");
   });
 
-  it("does not call the API when inputs are invalid, and reports field errors", async () => {
-    const { result } = renderHook(() => useCalculator());
-
-    act(() => result.current.setA("abc"));
-    await act(() => result.current.submit());
-
-    expect(calculateMock).not.toHaveBeenCalled();
-    expect(result.current.status).toBe("error");
-    expect(result.current.errorKind).toBe("validation");
-    expect(result.current.fieldErrors.a).toBe("Not a valid number");
-  });
-
-  it("validateField flags a bad value but stays quiet on an empty field", () => {
-    const { result } = renderHook(() => useCalculator());
-
-    act(() => result.current.validateField("a"));
-    expect(result.current.fieldErrors.a).toBeUndefined(); // empty: no nag
-
-    act(() => result.current.setA("abc"));
-    act(() => result.current.validateField("a"));
-    expect(result.current.fieldErrors.a).toBe("Not a valid number");
-
-    // b is irrelevant for a unary operation and must never get an error here.
-    act(() => result.current.setOperation("sqrt"));
-    act(() => result.current.setB("nonsense"));
-    act(() => result.current.validateField("b"));
-    expect(result.current.fieldErrors.b).toBeUndefined();
-  });
-
-  it("keeps up to 50 history entries", async () => {
-    let n = 0;
-    calculateMock.mockImplementation(async () => {
-      n += 1;
-      return { operation: "add", a: n, b: 0, result: n };
-    });
-    const { result } = renderHook(() => useCalculator());
-
-    for (let i = 0; i < 55; i += 1) {
-      act(() => {
-        result.current.setA(String(i));
-        result.current.setB("0");
-      });
-      await act(() => result.current.submit());
-    }
-    expect(result.current.history).toHaveLength(50);
-  });
-
-  it("calls the API and records history on success", async () => {
+  it("runs a calculation on '=' and records history", async () => {
     calculateMock.mockResolvedValue({ operation: "add", a: 2, b: 3, result: 5 });
     const { result } = renderHook(() => useCalculator());
 
     act(() => {
-      result.current.setA("2");
-      result.current.setB("3");
+      result.current.dispatch({ type: "digit", value: "2" });
+      result.current.dispatch({ type: "operator", op: "add" });
+      result.current.dispatch({ type: "digit", value: "3" });
+      result.current.dispatch({ type: "equals" });
     });
-    await act(() => result.current.submit());
 
+    await waitFor(() => expect(result.current.value).toBe("5"));
     expect(calculateMock).toHaveBeenCalledWith("add", 2, 3);
-    expect(result.current.status).toBe("success");
-    expect(result.current.result?.result).toBe(5);
-    expect(result.current.history).toHaveLength(1);
-    expect(result.current.history[0]).toMatchObject({
-      expression: "2 + 3",
-      result: 5,
-    });
+    expect(result.current.expression).toBe("2 + 3 =");
+    expect(result.current.history[0]).toMatchObject({ expression: "2 + 3", result: 5 });
   });
 
-  it("surfaces a friendly message on an API error and keeps history intact", async () => {
+  it("makes one API call per step when chaining", async () => {
     calculateMock
-      .mockResolvedValueOnce({ operation: "add", a: 1, b: 1, result: 2 })
-      .mockRejectedValueOnce(
-        new ApiError("DIVISION_BY_ZERO", "division by zero is undefined"),
-      );
+      .mockResolvedValueOnce({ operation: "add", a: 7, b: 6, result: 13 })
+      .mockResolvedValueOnce({ operation: "multiply", a: 13, b: 2, result: 26 });
     const { result } = renderHook(() => useCalculator());
 
     act(() => {
-      result.current.setA("1");
-      result.current.setB("1");
+      result.current.dispatch({ type: "digit", value: "7" });
+      result.current.dispatch({ type: "operator", op: "add" });
+      result.current.dispatch({ type: "digit", value: "6" });
+      result.current.dispatch({ type: "operator", op: "multiply" });
     });
-    await act(() => result.current.submit());
-    expect(result.current.history).toHaveLength(1);
+    await waitFor(() => expect(result.current.value).toBe("13"));
 
-    act(() => result.current.setOperation("divide"));
     act(() => {
-      result.current.setA("1");
-      result.current.setB("0");
+      result.current.dispatch({ type: "digit", value: "2" });
+      result.current.dispatch({ type: "equals" });
     });
-    await act(() => result.current.submit());
+    await waitFor(() => expect(result.current.value).toBe("26"));
 
-    expect(result.current.status).toBe("error");
-    expect(result.current.errorKind).toBe("api");
-    expect(result.current.errorMessage).toBe("You can't divide by zero.");
-    expect(result.current.history).toHaveLength(1); // unchanged
+    expect(calculateMock).toHaveBeenNthCalledWith(1, "add", 7, 6);
+    expect(calculateMock).toHaveBeenNthCalledWith(2, "multiply", 13, 2);
+    expect(result.current.history).toHaveLength(2);
   });
 
-  it("omits operand b for a unary operation", async () => {
+  it("buffers keystrokes typed while a chained step is still resolving", async () => {
+    // First step (multiply) resolves only when we let it.
+    let release!: (r: { operation: "multiply"; a: number; b: number; result: number }) => void;
+    calculateMock
+      .mockImplementationOnce(
+        () => new Promise((res) => { release = res; }),
+      )
+      .mockResolvedValueOnce({ operation: "add", a: 450, b: 40, result: 490 });
+    const { result } = renderHook(() => useCalculator());
+
+    // 25 × 18 + 40 =   (types "+ 40 =" before multiply comes back)
+    act(() => {
+      "25".split("").forEach((c) => result.current.dispatch({ type: "digit", value: c }));
+      result.current.dispatch({ type: "operator", op: "multiply" });
+      "18".split("").forEach((c) => result.current.dispatch({ type: "digit", value: c }));
+      result.current.dispatch({ type: "operator", op: "add" }); // fires the multiply request
+      "40".split("").forEach((c) => result.current.dispatch({ type: "digit", value: c }));
+      result.current.dispatch({ type: "equals" });
+    });
+
+    await act(async () => {
+      release({ operation: "multiply", a: 25, b: 18, result: 450 });
+    });
+
+    await waitFor(() => expect(result.current.value).toBe("490"));
+    expect(calculateMock).toHaveBeenNthCalledWith(2, "add", 450, 40);
+  });
+
+  it("omits b for a unary operation", async () => {
     calculateMock.mockResolvedValue({ operation: "sqrt", a: 144, result: 12 });
     const { result } = renderHook(() => useCalculator());
 
-    act(() => result.current.setOperation("sqrt"));
-    act(() => result.current.setA("144"));
-    await act(() => result.current.submit());
+    act(() => {
+      "144".split("").forEach((c) =>
+        result.current.dispatch({ type: "digit", value: c }),
+      );
+      result.current.dispatch({ type: "unary", op: "sqrt" });
+    });
 
+    await waitFor(() => expect(result.current.value).toBe("12"));
     expect(calculateMock).toHaveBeenCalledWith("sqrt", 144, undefined);
-    expect(result.current.result?.result).toBe(12);
+    expect(result.current.history[0]).toMatchObject({ expression: "√144", result: 12 });
   });
 
-  it("shows a loading status while the request is in flight", async () => {
-    let resolve!: (v: {
-      operation: "add";
-      a: number;
-      b: number;
-      result: number;
-    }) => void;
-    calculateMock.mockImplementation(
-      () =>
-        new Promise((r) => {
-          resolve = r;
-        }),
-    );
+  it("surfaces a friendly message when the API rejects, and keeps history", async () => {
+    calculateMock
+      .mockResolvedValueOnce({ operation: "add", a: 1, b: 1, result: 2 })
+      .mockRejectedValueOnce(new ApiError("DIVISION_BY_ZERO", "nope"));
     const { result } = renderHook(() => useCalculator());
 
     act(() => {
-      result.current.setA("2");
-      result.current.setB("2");
+      result.current.dispatch({ type: "digit", value: "1" });
+      result.current.dispatch({ type: "operator", op: "add" });
+      result.current.dispatch({ type: "digit", value: "1" });
+      result.current.dispatch({ type: "equals" });
     });
-    let submitPromise: Promise<void>;
-    act(() => {
-      submitPromise = result.current.submit();
-    });
-
-    await waitFor(() => expect(result.current.status).toBe("loading"));
-
-    await act(async () => {
-      resolve({ operation: "add", a: 2, b: 2, result: 4 });
-      await submitPromise;
-    });
-    expect(result.current.status).toBe("success");
-  });
-
-  it("reset clears inputs and result but keeps history", async () => {
-    calculateMock.mockResolvedValue({ operation: "add", a: 2, b: 3, result: 5 });
-    const { result } = renderHook(() => useCalculator());
-
-    act(() => {
-      result.current.setA("2");
-      result.current.setB("3");
-    });
-    await act(() => result.current.submit());
-
-    act(() => result.current.reset());
-
-    expect(result.current.rawA).toBe("");
-    expect(result.current.rawB).toBe("");
-    expect(result.current.result).toBeNull();
-    expect(result.current.status).toBe("idle");
+    await waitFor(() => expect(result.current.value).toBe("2"));
     expect(result.current.history).toHaveLength(1);
+
+    act(() => {
+      result.current.dispatch({ type: "digit", value: "8" });
+      result.current.dispatch({ type: "operator", op: "divide" });
+      result.current.dispatch({ type: "digit", value: "0" });
+      result.current.dispatch({ type: "equals" });
+    });
+
+    await waitFor(() => expect(result.current.status).toBe("error"));
+    expect(result.current.error).toBe("You can't divide by zero.");
+    expect(result.current.history).toHaveLength(1); // unchanged
   });
 
   it("clearHistory empties the log", async () => {
@@ -194,11 +147,12 @@ describe("useCalculator", () => {
     const { result } = renderHook(() => useCalculator());
 
     act(() => {
-      result.current.setA("1");
-      result.current.setB("1");
+      result.current.dispatch({ type: "digit", value: "1" });
+      result.current.dispatch({ type: "operator", op: "add" });
+      result.current.dispatch({ type: "digit", value: "1" });
+      result.current.dispatch({ type: "equals" });
     });
-    await act(() => result.current.submit());
-    expect(result.current.history).toHaveLength(1);
+    await waitFor(() => expect(result.current.history).toHaveLength(1));
 
     act(() => result.current.clearHistory());
     expect(result.current.history).toEqual([]);

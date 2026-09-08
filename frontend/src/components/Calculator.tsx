@@ -1,85 +1,77 @@
-import { type FormEvent } from "react";
+import { useEffect } from "react";
 
-import { getOperation } from "../domain/operations";
+import type { MachineAction } from "../domain/calculatorMachine";
 import { useCalculator } from "../hooks/useCalculator";
+import { Display } from "./Display";
 import { HistoryList } from "./HistoryList";
-import { OperandInput } from "./OperandInput";
-import { OperationPicker } from "./OperationPicker";
-import { ResultPanel } from "./ResultPanel";
+import { Keypad } from "./Keypad";
+
+/** Maps a physical keyboard event to a machine action, or null if unhandled. */
+function keyToAction(event: KeyboardEvent): MachineAction | null {
+  if (event.ctrlKey || event.metaKey || event.altKey) return null;
+  const k = event.key;
+
+  if (k >= "0" && k <= "9") return { type: "digit", value: k };
+
+  switch (k) {
+    case ".":
+    case ",":
+      return { type: "decimal" };
+    case "+":
+      return { type: "operator", op: "add" };
+    case "-":
+      return { type: "operator", op: "subtract" };
+    case "*":
+    case "x":
+    case "X":
+      return { type: "operator", op: "multiply" };
+    case "/":
+      return { type: "operator", op: "divide" };
+    case "^":
+      return { type: "operator", op: "power" };
+    case "%":
+      return { type: "operator", op: "percentage" };
+    case "=":
+    case "Enter":
+      return { type: "equals" };
+    case "Backspace":
+      return { type: "backspace" };
+    case "Escape":
+    case "Delete":
+      return { type: "clear" };
+    default:
+      return null;
+  }
+}
 
 export function Calculator() {
   const calc = useCalculator();
-  const operation = getOperation(calc.operationId);
-  const isBinary = operation.arity === 2;
-  const busy = calc.status === "loading";
+  const { dispatch } = calc;
 
-  function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    void calc.submit();
-  }
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const action = keyToAction(event);
+      if (!action) return;
+      event.preventDefault();
+      dispatch(action);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [dispatch]);
 
   return (
     <div className="calculator">
-      <form className="calculator__form" onSubmit={onSubmit} noValidate>
-        <OperationPicker
-          value={calc.operationId}
-          onChange={calc.setOperation}
-        />
-
-        <div className={isBinary ? "operands operands--binary" : "operands"}>
-          <OperandInput
-            label="Value a"
-            value={calc.rawA}
-            onChange={calc.setA}
-            onBlur={() => calc.validateField("a")}
-            error={calc.fieldErrors.a}
-            autoFocus
-          />
-          {isBinary ? (
-            <OperandInput
-              label={operation.id === "percentage" ? "Value b (of)" : "Value b"}
-              value={calc.rawB}
-              onChange={calc.setB}
-              onBlur={() => calc.validateField("b")}
-              error={calc.fieldErrors.b}
-            />
-          ) : null}
-        </div>
-
-        <div className="calculator__actions">
-          {/* Label stays "Calculate" so the button never resizes; the spinner
-              signals in-flight state without a layout shift. */}
-          <button
-            type="submit"
-            className="btn btn--primary"
-            disabled={busy}
-            aria-busy={busy}
-          >
-            {busy ? <span className="btn__spinner" aria-hidden="true" /> : null}
-            <span>Calculate</span>
-          </button>
-          <button
-            type="button"
-            className="btn btn--ghost"
-            onClick={calc.reset}
-          >
-            Reset
-          </button>
-        </div>
-
-        {calc.errorKind === "validation" && calc.errorMessage ? (
-          <p className="calculator__form-error" role="alert">
-            {calc.errorMessage}
-          </p>
-        ) : null}
-      </form>
-
-      <ResultPanel
-        status={calc.status}
-        result={calc.result}
-        errorMessage={calc.errorKind === "api" ? calc.errorMessage : null}
+      <Display
+        value={calc.value}
+        expression={calc.expression}
+        error={calc.error}
+        busy={calc.busy}
       />
-
+      <Keypad onAction={dispatch} />
+      <p className="calculator__hint">
+        Keyboard works too: digits, <kbd>+ − × ÷</kbd>, <kbd>Enter</kbd>,{" "}
+        <kbd>Backspace</kbd>, <kbd>Esc</kbd>.
+      </p>
       <HistoryList entries={calc.history} onClear={calc.clearHistory} />
     </div>
   );

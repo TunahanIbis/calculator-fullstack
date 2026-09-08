@@ -5,10 +5,12 @@ A calculator application split into two independently deployable parts:
 | Part                     | Stack                          | Tests                         |
 | ------------------------ | ------------------------------ | ----------------------------- |
 | [`backend/`](backend/)   | Go 1.23, standard library only | 27 test funcs · ~89 % (calc pkg 100 %) |
-| [`frontend/`](frontend/) | React 19 + TypeScript + Vite   | 54 tests · 100 % statements    |
+| [`frontend/`](frontend/) | React 19 + TypeScript + Vite   | 67 tests · 100 % statements    |
 
-The frontend is a thin client: **all arithmetic, including validation and edge
-cases like division by zero, is performed by the backend REST API.**
+The frontend is a keypad calculator with a live display and keyboard support,
+but **all arithmetic, including edge cases like division by zero, is performed
+by the backend REST API.** Chained operations evaluate left to right, like a
+basic pocket calculator (no operator precedence or parentheses).
 
 <p align="center">
   <img src="docs/screenshot.png" alt="Calculator UI" width="420" />
@@ -38,8 +40,9 @@ cases like division by zero, is performed by the backend REST API.**
 - **`backend/internal/httpapi`**, validates requests, maps domain errors to
   HTTP status codes (`400` = unparseable, `422` = semantically invalid), returns
   one consistent JSON envelope.
-- **`frontend/src`**, layered `domain → api → hooks → components`. Components
-  are presentational; `useCalculator` owns state and the submit workflow.
+- **`frontend/src`**, layered `domain → api → hooks → components`. A pure
+  `calculatorMachine` reducer owns all keypad/keyboard logic (no arithmetic,
+  no I/O); `useCalculator` runs its emitted requests against the API.
 
 Deeper rationale lives in [`backend/README.md`](backend/README.md#design-decisions),
 [`frontend/README.md`](frontend/README.md#design-decisions), and the
@@ -235,8 +238,8 @@ go tool cover -html=coverage.out            # line-by-line report
 
 # Frontend, Vitest + React Testing Library
 cd frontend
-npm test                                     # 54 tests
-npm run coverage                             # 100 % statements/functions/lines
+npm test                                     # 67 tests
+npm run coverage                             # 100 % statements / functions / lines
 ```
 
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs on every push

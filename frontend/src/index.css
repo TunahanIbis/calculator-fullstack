@@ -2,18 +2,19 @@
   --bg: #f4f5f7;
   --surface: #ffffff;
   --surface-2: #f0f1f4;
+  --surface-3: #e6e8ee;
   --border: #d9dce2;
   --text: #1c1f26;
   --text-muted: #5b616e;
   --primary: #2f6feb;
   --primary-text: #ffffff;
-  --success-bg: #e7f5ec;
-  --success-text: #1a7f42;
-  --error-bg: #fdecec;
-  --error-text: #b3261e;
+  --display-bg: #1c2029;
+  --display-text: #f6f7f9;
+  --display-muted: #9aa3b2;
+  --error-text: #ff6b60;
   --focus: #2f6feb;
-  --radius: 12px;
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.08);
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 12px 32px rgba(16, 24, 40, 0.1);
   color-scheme: light dark;
 }
 
@@ -22,16 +23,16 @@
     --bg: #0f1115;
     --surface: #171a21;
     --surface-2: #1f232c;
+    --surface-3: #272c37;
     --border: #2c313c;
     --text: #e8eaed;
     --text-muted: #9aa1ad;
     --primary: #4c8dff;
     --primary-text: #0b1220;
-    --success-bg: #10241a;
-    --success-text: #4ade80;
-    --error-bg: #2a1512;
-    --error-text: #ff6b60;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
+    --display-bg: #0b0d12;
+    --display-text: #f6f7f9;
+    --display-muted: #8b93a4;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 32px rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -40,10 +41,8 @@
 }
 
 html {
-  /* Always reserve the vertical scrollbar's width so centred content doesn't
-     jump sideways when the page grows tall enough to need one. */
+  /* Reserve the scrollbar's width so centred content never shifts sideways. */
   scrollbar-gutter: stable;
-  /* Fallback for engines without scrollbar-gutter: keep the track present. */
   overflow-y: scroll;
 }
 
@@ -69,8 +68,10 @@ body {
   outline-offset: 2px;
 }
 
+/* ---- Page ---- */
+
 .page {
-  max-width: 560px;
+  max-width: 420px;
   margin: 0 auto;
   padding: 2.5rem 1.25rem 3rem;
   display: flex;
@@ -91,7 +92,7 @@ body {
 
 .page__subtitle {
   margin: 0 auto;
-  max-width: 42ch;
+  max-width: 40ch;
   color: var(--text-muted);
   font-size: 0.94rem;
 }
@@ -113,246 +114,134 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1.25rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
-.calculator__form {
+/* ---- Display ---- */
+
+.display {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  align-items: flex-end;
+  gap: 0.35rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 12px;
+  background: var(--display-bg);
+  color: var(--display-text);
+  min-height: 6rem;
+  justify-content: flex-end;
+  overflow: hidden;
 }
 
-/* ---- Operation picker ---- */
+.display__expression {
+  font-size: 0.95rem;
+  color: var(--display-muted);
+  font-variant-numeric: tabular-nums;
+  min-height: 1.2em;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}
 
-.operation-picker {
+.display__value {
+  font-size: 2.4rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+  animation: value-in 0.16s ease both;
+}
+
+.display__value[data-busy] {
+  opacity: 0.55;
+}
+
+.display--error .display__value {
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--error-text);
+  white-space: normal;
+  text-align: right;
+}
+
+/* ---- Keypad ---- */
+
+.keypad {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0.5rem;
 }
 
-.op-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-  padding: 0.6rem 0.25rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
+.key {
   font: inherit;
+  font-size: 1.25rem;
+  font-weight: 500;
+  padding: 0.9rem 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text);
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, transform 0.04s ease;
+  transition: background 0.1s ease, transform 0.03s ease, filter 0.1s ease;
 }
 
-.op-button:hover:not(:disabled) {
-  border-color: var(--primary);
+.key:hover {
+  background: var(--surface-3);
 }
 
-.op-button:active:not(:disabled) {
+.key:active {
   transform: translateY(1px);
 }
 
-.op-button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.op-button--active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--primary-text);
-}
-
-.op-button__symbol {
-  font-size: 1.15rem;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.op-button__label {
-  font-size: 0.7rem;
-  color: inherit;
-  opacity: 0.9;
-}
-
-/* ---- Operand inputs ---- */
-
-.operands {
-  display: grid;
-  gap: 0.9rem;
-}
-
-.operands--binary {
-  grid-template-columns: 1fr 1fr;
-}
-
-.operand {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  position: relative;
-  /* Reserve room for the error line so showing it never reflows the row. */
-  padding-bottom: 1.1rem;
-}
-
-.operand__label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.operand__input {
-  padding: 0.65rem 0.75rem;
+.key--fn {
+  background: var(--surface-3);
   font-size: 1.05rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  color: var(--text);
 }
 
-.operand__input:disabled {
-  opacity: 0.6;
-}
-
-.operand__input--invalid {
-  border-color: var(--error-text);
-}
-
-.operand__error {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  margin: 0;
-  font-size: 0.78rem;
-  color: var(--error-text);
-  animation: field-error-in 0.15s ease both;
-}
-
-/* ---- Actions ---- */
-
-.calculator__actions {
-  display: flex;
-  gap: 0.6rem;
-}
-
-.btn {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1rem;
-  font: inherit;
+.key--op {
+  background: color-mix(in srgb, var(--primary) 14%, var(--surface-2));
+  color: var(--primary);
   font-weight: 600;
-  border-radius: 9px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: filter 0.12s ease, background 0.12s ease;
 }
 
-.btn:disabled {
-  opacity: 0.75;
-  cursor: default;
+.key--op:hover {
+  background: color-mix(in srgb, var(--primary) 22%, var(--surface-2));
 }
 
-.btn__spinner {
-  width: 0.9em;
-  height: 0.9em;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-}
-
-.btn--primary {
+.key--equals {
   background: var(--primary);
   color: var(--primary-text);
-}
-
-.btn--primary:hover:not(:disabled) {
-  filter: brightness(1.05);
-}
-
-.btn--ghost {
-  background: transparent;
-  border-color: var(--border);
-  color: var(--text);
-  flex: 0 0 auto;
-}
-
-.calculator__form-error {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--error-text);
-}
-
-/* ---- Result ---- */
-
-.result {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 1rem 1.1rem;
-  border-radius: 10px;
-  background: var(--surface-2);
-  min-height: 4.5rem;
-  justify-content: center;
-  word-break: break-word;
-  transition: background-color 0.2s ease;
-}
-
-.result--success,
-.result--loading {
-  background: var(--success-bg);
-}
-
-.result--error {
-  background: var(--error-bg);
-}
-
-/* In-flight: keep the previous result on screen, just dimmed. */
-.result--loading .result__label,
-.result--loading .result__value {
-  opacity: 0.45;
-}
-
-.result__label {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-}
-
-.result--success .result__label {
-  color: var(--success-text);
-}
-
-.result--error .result__label {
-  color: var(--error-text);
-  font-weight: 600;
-}
-
-.result__value {
-  font-size: 1.6rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
-  animation: result-in 0.22s ease both;
 }
 
-.result--loading .result__value {
-  animation: none;
+.key--equals:hover {
+  filter: brightness(1.06);
+  background: var(--primary);
 }
 
-.result--error .result__value {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--error-text);
+.key--wide {
+  grid-column: span 3;
 }
 
-.result--idle .result__value {
+.calculator__hint {
+  margin: -0.25rem 0 0;
+  text-align: center;
+  font-size: 0.78rem;
   color: var(--text-muted);
+}
+
+.calculator__hint kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.05rem 0.3rem;
 }
 
 /* ---- History ---- */
@@ -399,7 +288,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  /* Hold five rows so short pages don't make the card jump. */
   min-height: 7.4rem;
 }
 
@@ -449,16 +337,10 @@ body {
 
 /* ---- Motion ---- */
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes result-in {
+@keyframes value-in {
   from {
     opacity: 0;
-    transform: translateY(0.3rem);
+    transform: translateY(0.25rem);
   }
   to {
     opacity: 1;
@@ -470,17 +352,6 @@ body {
   from {
     opacity: 0;
     transform: translateY(-0.35rem);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes field-error-in {
-  from {
-    opacity: 0;
-    transform: translateY(-0.15rem);
   }
   to {
     opacity: 1;
@@ -500,16 +371,17 @@ body {
 
 /* ---- Small screens ---- */
 
-@media (max-width: 420px) {
-  .operation-picker {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .operands--binary {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 380px) {
   .page {
-    padding-top: 1.5rem;
+    padding: 1.5rem 0.9rem 2rem;
+  }
+
+  .display__value {
+    font-size: 2rem;
+  }
+
+  .key {
+    font-size: 1.15rem;
+    padding: 0.8rem 0;
   }
 }
