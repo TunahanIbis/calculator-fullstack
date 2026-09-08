@@ -128,14 +128,16 @@ answers a real calculation.
 | [`frontend/nginx.conf`](frontend/nginx.conf) | Serves the SPA, hard-caches `/assets/*`, `try_files … /index.html` fallback, and reverse-proxies `/api/` to `backend:8080` (resolved per-request via Docker DNS). |
 | [`docker-compose.yml`](docker-compose.yml) | Wires the two together on one network; `frontend` waits for `backend` to be `service_healthy`; only `8080` is published. |
 
-Both services define a `HEALTHCHECK`, so `docker compose ps` shows real
-health and the frontend never starts proxying to a backend that isn't ready.
+Both services define a `HEALTHCHECK`, so `docker compose ps` shows real health
+and the frontend never starts proxying to a backend that isn't ready.
 
-The image builds and a compose smoke test (`{"a":2,"b":3}` → `{"result":5}`
-through the running stack) run in CI. Locally the same nginx↔backend wiring —
-SPA serving, asset caching, `/api` URI passthrough, and error passthrough —
-is verified without the daemon by pointing a local nginx at `frontend/dist` and
-a `go run` backend.
+Verified end to end with `docker compose up --build` (Docker 29, Compose 2.40):
+both services reach `healthy` in ~6 s; `GET /`, the SPA fallback, a missing
+asset (→ 404), and `add` / `divide`-by-zero (→ 422) / `power` / `sqrt` / bad
+JSON (→ 400) all behave correctly through the composed nginx→backend path.
+Image sizes: **backend 14.8 MB** (distroless), **frontend 74 MB** (nginx-alpine).
+CI re-runs the image builds plus a `{"a":2,"b":3}` → `{"result":5}` smoke test
+on every push.
 
 ---
 
