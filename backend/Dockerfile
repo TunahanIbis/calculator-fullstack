@@ -28,6 +28,9 @@ COPY --from=build /out/server /server
 EXPOSE 8080
 USER nonroot:nonroot
 
-# A HEALTHCHECK is intentionally omitted: distroless has no shell/curl. Rely on
-# the orchestrator probing GET /healthz instead (see docker-compose.yml).
+# The binary can probe itself, so the shell-less distroless image still gets a
+# real healthcheck. Honours $PORT the same way the server does.
+HEALTHCHECK --interval=15s --timeout=3s --start-period=3s --retries=3 \
+  CMD ["/server", "healthcheck"]
+
 ENTRYPOINT ["/server"]

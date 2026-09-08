@@ -50,8 +50,8 @@ docker compose up --build
 # open http://localhost:8080
 ```
 
-nginx serves the built SPA and reverse-proxies `/api` to the Go service, so only
-port 8080 is exposed.
+Only port **8080** is published. See [Docker setup](#docker-setup) below for how
+it fits together.
 
 ### Option B — run each part locally
 
@@ -106,6 +106,39 @@ answers a real calculation.
 
 ---
 
+## Docker setup
+
+```
+                       ┌───────────────── calculator-web (nginx-unprivileged) ──┐
+  host :8080  ────────▶│  /            → dist/index.html  (SPA fallback)          │
+                       │  /assets/*    → immutable-cached static bundle           │
+                       │  /api/*       → proxy_pass ─────────────┐                │
+                       └────────────────────────────────────────┼────────────────┘
+                                                                ▼
+                       ┌──────────── calculator-service (distroless) ────────────┐
+                       │  Go binary, non-root, :8080, HEALTHCHECK "/server        │
+                       │  healthcheck" (self-probes GET /healthz — no shell)      │
+                       └─────────────────────────────────────────────────────────┘
+```
+
+| File | Role |
+| ---- | ---- |
+| [`backend/Dockerfile`](backend/Dockerfile) | Multi-stage: `golang:1.23-alpine` build → static `CGO_ENABLED=0` binary → `gcr.io/distroless/static` (non-root, no shell). Optional `--target test` stage runs `go vet` + `go test`. |
+| [`frontend/Dockerfile`](frontend/Dockerfile) | Multi-stage: `node:22-alpine` → `npm ci` + `vite build` → `nginxinc/nginx-unprivileged` serving `dist/`. |
+| [`frontend/nginx.conf`](frontend/nginx.conf) | Serves the SPA, hard-caches `/assets/*`, `try_files … /index.html` fallback, and reverse-proxies `/api/` to `backend:8080` (resolved per-request via Docker DNS). |
+| [`docker-compose.yml`](docker-compose.yml) | Wires the two together on one network; `frontend` waits for `backend` to be `service_healthy`; only `8080` is published. |
+
+Both services define a `HEALTHCHECK`, so `docker compose ps` shows real
+health and the frontend never starts proxying to a backend that isn't ready.
+
+The image builds and a compose smoke test (`{"a":2,"b":3}` → `{"result":5}`
+through the running stack) run in CI. Locally the same nginx↔backend wiring —
+SPA serving, asset caching, `/api` URI passthrough, and error passthrough —
+is verified without the daemon by pointing a local nginx at `frontend/dist` and
+a `go run` backend.
+
+---
+
 ## Repository layout
 
 ```
@@ -118,6 +151,7 @@ answers a real calculation.
 │   └── src/{domain,api,hooks,components}/
 ├── docker-compose.yml  full stack behind one nginx port
 ├── .github/workflows/  CI pipeline
+├── docs/screenshot.png
 └── README.md
 ```
 

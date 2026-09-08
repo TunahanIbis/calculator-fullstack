@@ -68,14 +68,14 @@ npm run coverage
 ```
 File            | % Stmts | % Branch | % Funcs | % Lines
 ----------------|---------|----------|---------|--------
-All files       |  99.5   |   97.3   |   100   |  99.5
+All files       |   100   |   98.2   |   100   |   100
  src/api        |   100   |   95.5   |   100   |   100
- src/components |  98.9   |   95.5   |   100   |  98.9
+ src/components |   100   |   97.6   |   100   |   100
  src/domain     |   100   |    100   |   100   |   100
  src/hooks      |   100   |    100   |   100   |   100
 ```
 
-50 tests (Vitest + React Testing Library), no real network:
+54 tests (Vitest + React Testing Library), no real network:
 
 - **`domain/validation`** — `parseOperand` accepts ints, decimals, signs,
   scientific notation, surrounding whitespace; rejects empty, `"12abc"`,
@@ -83,6 +83,8 @@ All files       |  99.5   |   97.3   |   100   |  99.5
   operations.
 - **`domain/operations`** — the catalogue matches the API; `formatExpression`
   renders `a × b`, `√a`, and `15% of 200`.
+- **`domain/format`** — integers verbatim, float noise trimmed
+  (`0.1 + 0.2 → "0.3"`), real decimals kept, non-finite passed through.
 - **`api/client`** — `fetch` is stubbed: success parsing, the server's error
   `code` is surfaced, missing envelope → `UNKNOWN`, thrown `fetch` → `NETWORK`,
   non-JSON 2xx → `UNKNOWN`.
@@ -132,6 +134,17 @@ and the markup honest.
 was out of scope. There is no request cancellation or debounce; the submit
 button is disabled while a request is in flight, which is enough for a
 calculator.
+
+---
+
+## Production / Docker
+
+`npm run build` emits a static `dist/`. The [`Dockerfile`](Dockerfile) builds it
+with Node, then serves it from `nginxinc/nginx-unprivileged` (non-root, port
+8080) using [`nginx.conf`](nginx.conf), which also reverse-proxies `/api/` to
+the backend and adds a `HEALTHCHECK`. The whole stack runs with
+`docker compose up --build` from the repo root — see the
+[root README](../README.md#docker-setup).
 
 ---
 

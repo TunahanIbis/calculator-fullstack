@@ -33,12 +33,17 @@ curl -s -X POST localhost:8080/api/v1/divide \
 # {"operation":"divide","a":22,"b":7,"result":3.142857142857143}
 ```
 
-Or with Docker:
+Or with Docker (multi-stage build → `gcr.io/distroless/static`, non-root):
 
 ```bash
 docker build -t calculator-service .
 docker run --rm -p 8080:8080 calculator-service
 ```
+
+The image has a `HEALTHCHECK` that runs the binary in probe mode —
+`server healthcheck` does a single `GET /healthz` against the local port and
+exits non-zero if it is not `200`. This keeps the shell-less distroless image
+health-aware without bundling `curl`/`wget`.
 
 A `Makefile` wraps the common tasks (`make help` to list them), but every target
 is just a plain `go` command — `make` is never required.
@@ -164,10 +169,10 @@ Current coverage (`go test ./... -covermode=count`):
 ```
 internal/calc       100.0%
 internal/httpapi      98.0%
-internal/app          94.4%
+internal/app          93.5%
 internal/config       93.0%
 ------------------------------
-total                 ~90%
+total                 ~89%   (cmd/server/main.go pulls it down; see below)
 ```
 
 `cmd/server/main.go` is a thin wiring shim (parse config → build server → run);
@@ -184,7 +189,8 @@ its behaviour is exercised through `internal/app`.
 - `internal/config` — defaults, overrides, alias parsing, and rejection of
   invalid values.
 - `internal/app` — server serves `/healthz`, returns cleanly on context
-  cancellation (graceful shutdown), and surfaces a bind error.
+  cancellation (graceful shutdown), surfaces a bind error, and the
+  `Healthcheck` probe passes against a live server / fails against a closed port.
 
 ---
 

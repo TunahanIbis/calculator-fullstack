@@ -10,18 +10,25 @@ services:
   backend:
     build: ./backend
     environment:
-      # nginx forwards same-origin requests, so CORS is not needed here; keep a
-      # value anyway in case the API is called directly during debugging.
+      # Same-origin requests come through nginx, so CORS is not strictly needed;
+      # this keeps direct calls to the API working during debugging.
       CORS_ALLOWED_ORIGINS: "http://localhost:8080"
       LOG_LEVEL: info
     expose:
       - "8080"
+    healthcheck:
+      test: ["CMD", "/server", "healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
     restart: unless-stopped
 
   frontend:
     build: ./frontend
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "8080:8080"
     restart: unless-stopped

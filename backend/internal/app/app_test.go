@@ -3,7 +3,9 @@ package app_test
 import (
 	"context"
 	"io"
+	"net"
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
 
@@ -52,6 +54,39 @@ func TestRun_ReturnsErrorWhenListenFails(t *testing.T) {
 	err := app.Run(context.Background(), srv, time.Second)
 	if err == nil {
 		t.Fatal("expected an error when the server cannot bind its address")
+	}
+}
+
+func TestHealthcheck(t *testing.T) {
+	// Bring a real server up on an ephemeral port.
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	port := strconv.Itoa(ln.Addr().(*net.TCPAddr).Port)
+	_ = ln.Close()
+
+	srv := app.NewServer(config.Config{Port: port})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { _ = app.Run(ctx, srv, time.Second); close(done) }()
+	t.Cleanup(func() { cancel(); <-done })
+
+	// Wait for it to accept connections.
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		if err := app.Healthcheck(port); err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("server did not become healthy in time")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+
+	// A port with nothing listening must fail.
+	if err := app.Healthcheck("1"); err == nil {
+		t.Fatal("expected Healthcheck to fail against a closed port")
 	}
 }
 

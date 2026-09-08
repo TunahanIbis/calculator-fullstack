@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -17,6 +18,16 @@ func main() {
 	if err != nil {
 		slog.Error("invalid configuration", "error", err)
 		os.Exit(1)
+	}
+
+	// `server healthcheck` probes a running instance and exits; used as the
+	// container HEALTHCHECK so the distroless image needs no extra tooling.
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		if err := app.Healthcheck(cfg.Port); err != nil {
+			fmt.Fprintln(os.Stderr, "healthcheck failed:", err)
+			os.Exit(1)
+		}
+		return
 	}
 
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{

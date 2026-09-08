@@ -5,6 +5,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -52,5 +53,23 @@ func Run(ctx context.Context, srv *http.Server, grace time.Duration) error {
 		return err
 	}
 	slog.Info("shutdown complete")
+	return nil
+}
+
+// Healthcheck performs a one-shot GET /healthz against an instance already
+// listening on port. It backs the container HEALTHCHECK so the distroless image
+// needs no shell, curl or wget: `/server healthcheck` exits 0 when healthy.
+func Healthcheck(port string) error {
+	client := &http.Client{Timeout: 2 * time.Second}
+
+	resp, err := client.Get("http://127.0.0.1:" + port + "/healthz")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("/healthz returned HTTP %d", resp.StatusCode)
+	}
 	return nil
 }
