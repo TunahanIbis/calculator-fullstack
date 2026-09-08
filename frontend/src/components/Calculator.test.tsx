@@ -64,7 +64,7 @@ describe("<Calculator />", () => {
 
     await u.keyboard("/0=");
     expect(
-      await screen.findByText("You can't divide by zero."),
+      await screen.findByText("Can't divide by zero."),
     ).toBeInTheDocument();
 
     // History from before the error survives; the next digit clears the error.

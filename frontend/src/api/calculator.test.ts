@@ -45,10 +45,10 @@ describe("calculate", () => {
 describe("friendlyError", () => {
   it("maps known error codes to a readable sentence", () => {
     expect(friendlyError(new ApiError("DIVISION_BY_ZERO", "x"))).toBe(
-      "You can't divide by zero.",
+      "Can't divide by zero.",
     );
     expect(friendlyError(new ApiError("NEGATIVE_SQRT", "x"))).toContain(
-      "negative number",
+      "negative",
     );
     expect(friendlyError(new ApiError("NETWORK", "x"))).toContain("reach");
   });
@@ -61,10 +61,10 @@ describe("friendlyError", () => {
 
   it("returns a generic message for non-ApiError values", () => {
     expect(friendlyError(new Error("kaboom"))).toBe(
-      "Something went wrong. Please try again.",
+      "Something went wrong.",
     );
     expect(friendlyError("just a string")).toBe(
-      "Something went wrong. Please try again.",
+      "Something went wrong.",
     );
   });
 });

@@ -138,7 +138,7 @@ describe("useCalculator", () => {
     });
 
     await waitFor(() => expect(result.current.status).toBe("error"));
-    expect(result.current.error).toBe("You can't divide by zero.");
+    expect(result.current.error).toBe("Can't divide by zero.");
     expect(result.current.history).toHaveLength(1); // unchanged
   });
 

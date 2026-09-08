@@ -21,15 +21,15 @@ export interface CalculationResult {
  * produce. Falls back to the server's own message, then a generic line.
  */
 const FRIENDLY_MESSAGE: Record<string, string> = {
-  DIVISION_BY_ZERO: "You can't divide by zero.",
-  NEGATIVE_SQRT: "The square root of a negative number isn't a real number.",
-  NON_FINITE_NUMBER: "That result is too large to represent.",
-  VALIDATION_ERROR: "Please check the numbers you entered.",
-  INVALID_JSON: "Please check the numbers you entered.",
-  NETWORK: "Couldn't reach the calculator service. Is it running?",
+  DIVISION_BY_ZERO: "Can't divide by zero.",
+  NEGATIVE_SQRT: "No square root of a negative.",
+  NON_FINITE_NUMBER: "Result is out of range.",
+  VALIDATION_ERROR: "Check the values you entered.",
+  INVALID_JSON: "Check the values you entered.",
+  NETWORK: "Can't reach the calculator service.",
 };
 
-const GENERIC_MESSAGE = "Something went wrong. Please try again.";
+const GENERIC_MESSAGE = "Something went wrong.";
 
 export function friendlyError(error: unknown): string {
   if (error instanceof ApiError) {

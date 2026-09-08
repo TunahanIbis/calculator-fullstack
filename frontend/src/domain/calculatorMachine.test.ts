@@ -222,8 +222,8 @@ describe("errors", () => {
     let s = fold(d("8"), op("divide"), d("0"), eq);
     expect(s.request).toEqual({ op: "divide", a: 8, b: 0 });
 
-    s = reducer(s, reject("You can't divide by zero."));
-    expect(s.error).toBe("You can't divide by zero.");
+    s = reducer(s, reject("Can't divide by zero."));
+    expect(s.error).toBe("Can't divide by zero.");
     expect(s.request).toBeNull();
 
     s = reducer(s, d("5"));
