@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+.vite
+.git
+*.log
+.env
+.env.*
+!.env.example
+.playwright-mcp

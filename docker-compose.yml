@@ -1,0 +1,27 @@
+# Runs the whole stack: Go API + React SPA behind nginx.
+#
+#   docker compose up --build
+#   open http://localhost:8080
+#
+# nginx serves the built frontend and reverse-proxies /api to the backend, so
+# only one port is published.
+
+services:
+  backend:
+    build: ./backend
+    environment:
+      # nginx forwards same-origin requests, so CORS is not needed here; keep a
+      # value anyway in case the API is called directly during debugging.
+      CORS_ALLOWED_ORIGINS: "http://localhost:8080"
+      LOG_LEVEL: info
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

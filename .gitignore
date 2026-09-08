@@ -5,10 +5,11 @@ backend/coverage.html
 backend/coverage
 *.test
 
-# Frontend (Node) — added with the frontend
+# Frontend (Node)
 node_modules/
 frontend/dist/
 frontend/coverage/
+*.tsbuildinfo
 *.local
 
 # Environment
