@@ -68,14 +68,14 @@ npm run coverage
 ```
 File            | % Stmts | % Branch | % Funcs | % Lines
 ----------------|---------|----------|---------|--------
-All files       |   100   |   98.2   |   100   |   100
+All files       |   100   |   98.6   |   96.2  |   100
  src/api        |   100   |   95.5   |   100   |   100
- src/components |   100   |   97.6   |   100   |   100
+ src/components |   100   |   98.3   |   92.3  |   100
  src/domain     |   100   |    100   |   100   |   100
  src/hooks      |   100   |    100   |   100   |   100
 ```
 
-54 tests (Vitest + React Testing Library), no real network:
+58 tests (Vitest + React Testing Library), no real network:
 
 - **`domain/validation`** — `parseOperand` accepts ints, decimals, signs,
   scientific notation, surrounding whitespace; rejects empty, `"12abc"`,
@@ -91,22 +91,25 @@ All files       |   100   |   98.2   |   100   |   100
 - **`api/calculator`** — correct path/body per operation; `friendlyError`
   mapping and fallbacks.
 - **`hooks/useCalculator`** — invalid input never calls the API and sets field
-  errors; success records history; API error shows a friendly message and
-  leaves history intact; unary omits `b`; `loading` state; `reset` /
+  errors; `validateField` flags a bad value on blur but stays quiet on an empty
+  field; success records history (capped at 50); API error shows a friendly
+  message and leaves history intact; unary omits `b`; `loading` state; `reset` /
   `clearHistory`.
 - **`components/Calculator`** — full render: pick an operation, type, submit,
   see the formatted result; `sqrt` hides operand `b`; bad input is caught
-  locally (no API call); a rejected call shows the friendly message; history
-  appends and clears; **Enter** submits.
+  locally (no API call) and also flagged on blur; a rejected call shows the
+  friendly message; history appends, paginates (5 per page), and clears;
+  **Enter** submits.
 
 ---
 
 ## Design decisions
 
 **The browser never does arithmetic.** Client validation is deliberately narrow
-— "is this a finite number?" — so there is exactly one place (the Go service)
-where `2 / 0` is decided. This keeps the two layers honest and the contract
-testable from both sides.
+(just "is this a finite number?"), so there is exactly one place, the Go
+service, where `2 / 0` is decided. This keeps the two layers honest and the
+contract testable from both sides. Fields validate on blur so a typo is flagged
+before you press Calculate, but an empty field is left alone until submit.
 
 **Layered, framework-light.** `domain/` (pure functions) → `api/` (fetch) →
 `hooks/useCalculator` (all state + the submit workflow) → `components/`
@@ -126,14 +129,24 @@ rendering. `400`-class problems (bad input) are shown inline on the fields;
 `<label>`s and `aria-describedby` error links, the result is an `aria-live`
 `output`, and the whole form submits on Enter.
 
-**No component library.** ~200 lines of hand-written CSS with custom properties
-and a `prefers-color-scheme` dark theme keeps the bundle small (~63 kB gzipped)
+**No component library.** ~250 lines of hand-written CSS with custom properties
+and a `prefers-color-scheme` dark theme keeps the bundle small (~64 kB gzipped)
 and the markup honest.
 
-**Trade-offs.** State is in-memory (history resets on refresh) — persistence
-was out of scope. There is no request cancellation or debounce; the submit
-button is disabled while a request is in flight, which is enough for a
-calculator.
+**Stable layout, light motion.** Against a local API the request finishes in
+milliseconds, so the result panel keeps the previous value on screen (dimmed)
+during the request instead of flashing a placeholder, and the Calculate button
+shows a spinner without changing width. The field error message is positioned in
+reserved space so it never nudges the row. Entrances (result, history rows,
+field errors) use short fades that collapse to nothing under
+`prefers-reduced-motion`.
+
+**History is paginated, not truncated.** Up to 50 entries are kept and shown 5
+per page, newest first; a new calculation jumps back to page one.
+
+**Trade-offs.** State is in-memory, so history resets on refresh; persistence
+was out of scope. There is no request cancellation or debounce; disabling the
+submit button while a request is in flight is enough for a calculator.
 
 ---
 

@@ -42,6 +42,41 @@ describe("useCalculator", () => {
     expect(result.current.fieldErrors.a).toBe("Not a valid number");
   });
 
+  it("validateField flags a bad value but stays quiet on an empty field", () => {
+    const { result } = renderHook(() => useCalculator());
+
+    act(() => result.current.validateField("a"));
+    expect(result.current.fieldErrors.a).toBeUndefined(); // empty: no nag
+
+    act(() => result.current.setA("abc"));
+    act(() => result.current.validateField("a"));
+    expect(result.current.fieldErrors.a).toBe("Not a valid number");
+
+    // b is irrelevant for a unary operation and must never get an error here.
+    act(() => result.current.setOperation("sqrt"));
+    act(() => result.current.setB("nonsense"));
+    act(() => result.current.validateField("b"));
+    expect(result.current.fieldErrors.b).toBeUndefined();
+  });
+
+  it("keeps up to 50 history entries", async () => {
+    let n = 0;
+    calculateMock.mockImplementation(async () => {
+      n += 1;
+      return { operation: "add", a: n, b: 0, result: n };
+    });
+    const { result } = renderHook(() => useCalculator());
+
+    for (let i = 0; i < 55; i += 1) {
+      act(() => {
+        result.current.setA(String(i));
+        result.current.setB("0");
+      });
+      await act(() => result.current.submit());
+    }
+    expect(result.current.history).toHaveLength(50);
+  });
+
   it("calls the API and records history on success", async () => {
     calculateMock.mockResolvedValue({ operation: "add", a: 2, b: 3, result: 5 });
     const { result } = renderHook(() => useCalculator());

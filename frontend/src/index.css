@@ -180,6 +180,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  position: relative;
+  /* Reserve room for the error line so showing it never reflows the row. */
+  padding-bottom: 1.1rem;
 }
 
 .operand__label {
@@ -206,9 +209,13 @@ body {
 }
 
 .operand__error {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   margin: 0;
   font-size: 0.78rem;
   color: var(--error-text);
+  animation: field-error-in 0.15s ease both;
 }
 
 /* ---- Actions ---- */
@@ -220,6 +227,10 @@ body {
 
 .btn {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 0.7rem 1rem;
   font: inherit;
   font-weight: 600;
@@ -230,8 +241,17 @@ body {
 }
 
 .btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  opacity: 0.75;
+  cursor: default;
+}
+
+.btn__spinner {
+  width: 0.9em;
+  height: 0.9em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
 }
 
 .btn--primary {
@@ -268,14 +288,22 @@ body {
   min-height: 4.5rem;
   justify-content: center;
   word-break: break-word;
+  transition: background-color 0.2s ease;
 }
 
-.result--success {
+.result--success,
+.result--loading {
   background: var(--success-bg);
 }
 
 .result--error {
   background: var(--error-bg);
+}
+
+/* In-flight: keep the previous result on screen, just dimmed. */
+.result--loading .result__label,
+.result--loading .result__value {
+  opacity: 0.45;
 }
 
 .result__label {
@@ -296,6 +324,11 @@ body {
   font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: -0.01em;
+  animation: result-in 0.22s ease both;
+}
+
+.result--loading .result__value {
+  animation: none;
 }
 
 .result--error .result__value {
@@ -329,13 +362,20 @@ body {
   letter-spacing: 0.06em;
 }
 
-.history__clear {
+.history__clear,
+.history__page-btn {
   background: none;
   border: none;
   color: var(--primary);
   font: inherit;
   font-size: 0.82rem;
   cursor: pointer;
+}
+
+.history__empty {
+  margin: 0.9rem 0 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
 }
 
 .history__list {
@@ -345,6 +385,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  /* Hold five rows so short pages don't make the card jump. */
+  min-height: 7.4rem;
 }
 
 .history__item {
@@ -353,6 +395,7 @@ body {
   align-items: baseline;
   font-variant-numeric: tabular-nums;
   font-size: 0.92rem;
+  animation: history-in 0.2s ease both;
 }
 
 .history__expr {
@@ -362,6 +405,83 @@ body {
 .history__result {
   margin-left: auto;
   font-weight: 700;
+}
+
+.history__pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+}
+
+.history__page-btn {
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 0.35rem;
+}
+
+.history__page-btn:disabled {
+  color: var(--text-muted);
+  opacity: 0.5;
+  cursor: default;
+}
+
+.history__page-info {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Motion ---- */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.3rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes history-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes field-error-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.15rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 /* ---- Small screens ---- */

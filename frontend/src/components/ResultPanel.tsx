@@ -9,36 +9,54 @@ interface Props {
   errorMessage: string | null;
 }
 
+type View = {
+  variant: "idle" | "success" | "error" | "loading";
+  label: string | null;
+  value: string;
+};
+
 /**
- * The primary output area. Shows a placeholder when idle, the formatted result
- * on success, and the friendly error message on failure.
+ * Decides what the panel shows. While a request is in flight we keep the
+ * previous result on screen (dimmed via CSS) instead of swapping to a
+ * placeholder, which is what made the panel flicker on fast responses.
  */
-export function ResultPanel({ status, result, errorMessage }: Props) {
+function resolveView(props: Props): View {
+  const { status, result, errorMessage } = props;
+
   if (status === "error" && errorMessage) {
-    return (
-      <output className="result result--error" aria-label="Result" aria-live="polite">
-        <span className="result__label">Error</span>
-        <span className="result__value">{errorMessage}</span>
-      </output>
-    );
+    return { variant: "error", label: "Error", value: errorMessage };
   }
 
-  if (status === "success" && result) {
+  if (result && (status === "success" || status === "loading")) {
     const op = getOperation(result.operation);
-    return (
-      <output className="result result--success" aria-label="Result" aria-live="polite">
-        <span className="result__label">
-          {formatExpression(op, result.a, result.b)} =
-        </span>
-        <span className="result__value">{formatNumber(result.result)}</span>
-      </output>
-    );
+    return {
+      variant: status === "loading" ? "loading" : "success",
+      label: `${formatExpression(op, result.a, result.b)} =`,
+      value: formatNumber(result.result),
+    };
   }
+
+  if (status === "loading") {
+    return { variant: "loading", label: null, value: "Calculating…" };
+  }
+
+  return { variant: "idle", label: null, value: "—" };
+}
+
+/** The primary output area: placeholder, the formatted result, or an error. */
+export function ResultPanel(props: Props) {
+  const { variant, label, value } = resolveView(props);
 
   return (
-    <output className="result result--idle" aria-label="Result" aria-live="polite">
-      <span className="result__value">
-        {status === "loading" ? "Calculating…" : "—"}
+    <output
+      className={`result result--${variant}`}
+      aria-label="Result"
+      aria-live="polite"
+    >
+      {label ? <span className="result__label">{label}</span> : null}
+      {/* Keyed on the text so a changing value re-triggers the enter animation. */}
+      <span className="result__value" key={value}>
+        {value}
       </span>
     </output>
   );

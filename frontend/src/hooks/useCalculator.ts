@@ -10,7 +10,11 @@ import {
   formatExpression,
   type OperationId,
 } from "../domain/operations";
-import { validateInputs, type InputErrors } from "../domain/validation";
+import {
+  parseOperand,
+  validateInputs,
+  type InputErrors,
+} from "../domain/validation";
 
 export type Status = "idle" | "loading" | "success" | "error";
 
@@ -23,7 +27,8 @@ export interface HistoryEntry {
   result: number;
 }
 
-const HISTORY_LIMIT = 8;
+/** How many entries to keep; the UI paginates through them. */
+const HISTORY_LIMIT = 50;
 
 export interface CalculatorState {
   operationId: OperationId;
@@ -44,6 +49,8 @@ export interface CalculatorActions {
   setOperation: (id: OperationId) => void;
   setA: (value: string) => void;
   setB: (value: string) => void;
+  /** Validate one field now (used on blur) without running the calculation. */
+  validateField: (field: "a" | "b") => void;
   submit: () => Promise<void>;
   reset: () => void;
   clearHistory: () => void;
@@ -103,6 +110,22 @@ export function useCalculator(): CalculatorState & CalculatorActions {
       errorMessage: null,
       errorKind: null,
     }));
+  }, []);
+
+  const validateField = useCallback((field: "a" | "b") => {
+    setState((s) => {
+      if (field === "b" && getOperation(s.operationId).arity === 1) {
+        return s;
+      }
+      const raw = field === "a" ? s.rawA : s.rawB;
+      // Don't nag about an empty field on blur; submit still catches it.
+      const message =
+        raw.trim() === "" ? undefined : parseOperand(raw).error;
+      if (s.fieldErrors[field] === message) {
+        return s;
+      }
+      return { ...s, fieldErrors: { ...s.fieldErrors, [field]: message } };
+    });
   }, []);
 
   const reset = useCallback(() => {
@@ -167,8 +190,8 @@ export function useCalculator(): CalculatorState & CalculatorActions {
   }, []);
 
   const actions = useMemo(
-    () => ({ setOperation, setA, setB, submit, reset, clearHistory }),
-    [setOperation, setA, setB, submit, reset, clearHistory],
+    () => ({ setOperation, setA, setB, validateField, submit, reset, clearHistory }),
+    [setOperation, setA, setB, validateField, submit, reset, clearHistory],
   );
 
   return { ...state, ...actions };

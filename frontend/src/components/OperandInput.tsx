@@ -4,6 +4,7 @@ interface Props {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   error?: string | undefined;
   disabled?: boolean;
   /** Marks this as the field that should receive focus on mount. */
@@ -15,6 +16,7 @@ export function OperandInput({
   label,
   value,
   onChange,
+  onBlur,
   error,
   disabled = false,
   autoFocus = false,
@@ -41,7 +43,9 @@ export function OperandInput({
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
       />
+      {/* Absolutely positioned in CSS so it never reflows the operands row. */}
       {error ? (
         <p className="operand__error" id={errorId} role="alert">
           {error}

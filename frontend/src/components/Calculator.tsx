@@ -24,7 +24,6 @@ export function Calculator() {
         <OperationPicker
           value={calc.operationId}
           onChange={calc.setOperation}
-          disabled={busy}
         />
 
         <div className={isBinary ? "operands operands--binary" : "operands"}>
@@ -32,8 +31,8 @@ export function Calculator() {
             label="Value a"
             value={calc.rawA}
             onChange={calc.setA}
+            onBlur={() => calc.validateField("a")}
             error={calc.fieldErrors.a}
-            disabled={busy}
             autoFocus
           />
           {isBinary ? (
@@ -41,21 +40,28 @@ export function Calculator() {
               label={operation.id === "percentage" ? "Value b (of)" : "Value b"}
               value={calc.rawB}
               onChange={calc.setB}
+              onBlur={() => calc.validateField("b")}
               error={calc.fieldErrors.b}
-              disabled={busy}
             />
           ) : null}
         </div>
 
         <div className="calculator__actions">
-          <button type="submit" className="btn btn--primary" disabled={busy}>
-            {busy ? "Calculating…" : "Calculate"}
+          {/* Label stays "Calculate" so the button never resizes; the spinner
+              signals in-flight state without a layout shift. */}
+          <button
+            type="submit"
+            className="btn btn--primary"
+            disabled={busy}
+            aria-busy={busy}
+          >
+            {busy ? <span className="btn__spinner" aria-hidden="true" /> : null}
+            <span>Calculate</span>
           </button>
           <button
             type="button"
             className="btn btn--ghost"
             onClick={calc.reset}
-            disabled={busy}
           >
             Reset
           </button>
