@@ -39,6 +39,20 @@
   box-sizing: border-box;
 }
 
+html {
+  /* Always reserve the vertical scrollbar's width so centred content doesn't
+     jump sideways when the page grows tall enough to need one. */
+  scrollbar-gutter: stable;
+  /* Fallback for engines without scrollbar-gutter: keep the track present. */
+  overflow-y: scroll;
+}
+
+@supports (scrollbar-gutter: stable) {
+  html {
+    overflow-y: auto;
+  }
+}
+
 body {
   margin: 0;
   padding: 0;
