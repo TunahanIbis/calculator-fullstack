@@ -2,7 +2,7 @@
 
 A React + TypeScript single-page app for the calculator service. It collects
 input, validates it, calls the REST API, and renders the response. **No
-arithmetic happens in the browser** — the backend is the source of truth.
+arithmetic happens in the browser**, the backend is the source of truth.
 
 - [Quick start](#quick-start)
 - [How it talks to the API](#how-it-talks-to-the-api)
@@ -49,11 +49,11 @@ app routes `/api` to the Go service:
 
 The client layer is two small files:
 
-- **`src/api/client.ts`** — `postJson()` wraps `fetch`: it always resolves to
+- **`src/api/client.ts`**, `postJson()` wraps `fetch`: it always resolves to
   parsed data or throws an `ApiError` with a stable `code` (`NETWORK` for a
   connection failure, `UNKNOWN` for an unreadable body, or the backend's own
   code such as `DIVISION_BY_ZERO`).
-- **`src/api/calculator.ts`** — `calculate(op, a, b?)` builds the right body
+- **`src/api/calculator.ts`**, `calculate(op, a, b?)` builds the right body
   (omitting `b` for `sqrt`), plus `friendlyError()` which turns an `ApiError`
   code into a sentence for the UI.
 
@@ -77,25 +77,25 @@ All files       |   100   |   98.6   |   96.2  |   100
 
 58 tests (Vitest + React Testing Library), no real network:
 
-- **`domain/validation`** — `parseOperand` accepts ints, decimals, signs,
+- **`domain/validation`**, `parseOperand` accepts ints, decimals, signs,
   scientific notation, surrounding whitespace; rejects empty, `"12abc"`,
   `"1,5"`, `Infinity`, `NaN`. `validateInputs` skips operand `b` for unary
   operations.
-- **`domain/operations`** — the catalogue matches the API; `formatExpression`
+- **`domain/operations`**, the catalogue matches the API; `formatExpression`
   renders `a × b`, `√a`, and `15% of 200`.
-- **`domain/format`** — integers verbatim, float noise trimmed
+- **`domain/format`**, integers verbatim, float noise trimmed
   (`0.1 + 0.2 → "0.3"`), real decimals kept, non-finite passed through.
-- **`api/client`** — `fetch` is stubbed: success parsing, the server's error
+- **`api/client`**, `fetch` is stubbed: success parsing, the server's error
   `code` is surfaced, missing envelope → `UNKNOWN`, thrown `fetch` → `NETWORK`,
   non-JSON 2xx → `UNKNOWN`.
-- **`api/calculator`** — correct path/body per operation; `friendlyError`
+- **`api/calculator`**, correct path/body per operation; `friendlyError`
   mapping and fallbacks.
-- **`hooks/useCalculator`** — invalid input never calls the API and sets field
+- **`hooks/useCalculator`**, invalid input never calls the API and sets field
   errors; `validateField` flags a bad value on blur but stays quiet on an empty
   field; success records history (capped at 50); API error shows a friendly
   message and leaves history intact; unary omits `b`; `loading` state; `reset` /
   `clearHistory`.
-- **`components/Calculator`** — full render: pick an operation, type, submit,
+- **`components/Calculator`**, full render: pick an operation, type, submit,
   see the formatted result; `sqrt` hides operand `b`; bad input is caught
   locally (no API call) and also flagged on blur; a rejected call shows the
   friendly message; history appends, paginates (5 per page), and clears;
@@ -156,7 +156,7 @@ submit button while a request is in flight is enough for a calculator.
 with Node, then serves it from `nginxinc/nginx-unprivileged` (non-root, port
 8080) using [`nginx.conf`](nginx.conf), which also reverse-proxies `/api/` to
 the backend and adds a `HEALTHCHECK`. The whole stack runs with
-`docker compose up --build` from the repo root — see the
+`docker compose up --build` from the repo root, see the
 [root README](../README.md#docker-setup).
 
 ---
@@ -175,7 +175,7 @@ frontend/
     ├── index.css           # theme + all styles
     ├── domain/             # operations table, input validation  (pure)
     ├── api/                # fetch client + typed operation calls
-    ├── hooks/              # useCalculator — state + submit workflow
+    ├── hooks/              # useCalculator, state + submit workflow
     ├── components/         # OperationPicker, OperandInput, ResultPanel,
     │                       # HistoryList, Calculator
     └── test/setup.ts       # jest-dom matchers + RTL cleanup

@@ -3,7 +3,7 @@
  *
  * Everything the rest of the app needs is `ApiError` (a normalised failure with
  * a stable `code`) and `postJson` (a POST that always resolves to parsed data
- * or throws an `ApiError`). No third-party HTTP client — `fetch` is enough.
+ * or throws an `ApiError`). No third-party HTTP client; `fetch` is enough.
  */
 
 /** Shape of the backend's error envelope: `{ "error": { code, message } }`. */

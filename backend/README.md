@@ -1,7 +1,7 @@
 # Calculator Service (backend)
 
 A small, stateless Go microservice that performs basic and advanced arithmetic
-over a JSON REST API. It has **no third-party dependencies** — only the Go
+over a JSON REST API. It has **no third-party dependencies**, only the Go
 standard library.
 
 - [Quick start](#quick-start)
@@ -40,13 +40,13 @@ docker build -t calculator-service .
 docker run --rm -p 8080:8080 calculator-service
 ```
 
-The image has a `HEALTHCHECK` that runs the binary in probe mode —
+The image has a `HEALTHCHECK` that runs the binary in probe mode:
 `server healthcheck` does a single `GET /healthz` against the local port and
 exits non-zero if it is not `200`. This keeps the shell-less distroless image
 health-aware without bundling `curl`/`wget`.
 
 A `Makefile` wraps the common tasks (`make help` to list them), but every target
-is just a plain `go` command — `make` is never required.
+is just a plain `go` command, `make` is never required.
 
 ---
 
@@ -151,7 +151,7 @@ human-readable and may change.
 | 500  | `INTERNAL_ERROR`      | Unexpected server error (also returned by the panic recovery middleware) |
 
 **Why `400` vs `422`?** `400` means "I can't parse this request". `422` means
-"I parsed it fine, but it doesn't make sense" — the request is syntactically
+"I parsed it fine, but it doesn't make sense", the request is syntactically
 valid JSON but semantically or mathematically invalid.
 
 ---
@@ -180,15 +180,15 @@ its behaviour is exercised through `internal/app`.
 
 **What is tested**
 
-- `internal/calc` — table-driven tests for every operation: happy paths, float
+- `internal/calc`, table-driven tests for every operation: happy paths, float
   rounding, division/`sqrt`/overflow edge cases, and `NaN`/`Inf` rejection.
-- `internal/httpapi` — the full router (with middleware) via `httptest`: every
+- `internal/httpapi`, the full router (with middleware) via `httptest`: every
   endpoint, each error `code`/status, malformed bodies, unknown fields, oversized
   bodies, method/route mismatches, CORS preflight and disallowed origins, and the
   panic-recovery middleware.
-- `internal/config` — defaults, overrides, alias parsing, and rejection of
+- `internal/config`, defaults, overrides, alias parsing, and rejection of
   invalid values.
-- `internal/app` — server serves `/healthz`, returns cleanly on context
+- `internal/app`, server serves `/healthz`, returns cleanly on context
   cancellation (graceful shutdown), surfaces a bind error, and the
   `Healthcheck` probe passes against a live server / fails against a closed port.
 
@@ -225,7 +225,7 @@ request with status and latency, panic-recovery middleware, scoped CORS, HTTP
 timeouts, and signal-driven graceful shutdown.
 
 **Trade-offs / non-goals.** No auth, rate limiting, persistence, or arbitrary
-expression parsing (`"2 + 3 * 4"`) — each operation is an explicit endpoint. All
+expression parsing (`"2 + 3 * 4"`), each operation is an explicit endpoint. All
 arithmetic is IEEE-754 `float64`, so very large magnitudes and repeating
 decimals carry the usual floating-point imprecision; arbitrary-precision math
 was out of scope.

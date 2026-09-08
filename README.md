@@ -7,8 +7,8 @@ A calculator application split into two independently deployable parts:
 | [`backend/`](backend/)   | Go 1.23, standard library only | 27 test funcs · ~89 % (calc pkg 100 %) |
 | [`frontend/`](frontend/) | React 19 + TypeScript + Vite   | 54 tests · 100 % statements    |
 
-The frontend is a thin client: **all arithmetic — including validation and edge
-cases like division by zero — is performed by the backend REST API.**
+The frontend is a thin client: **all arithmetic, including validation and edge
+cases like division by zero, is performed by the backend REST API.**
 
 <p align="center">
   <img src="docs/screenshot.png" alt="Calculator UI" width="420" />
@@ -33,12 +33,12 @@ cases like division by zero — is performed by the backend REST API.**
 └─────────────────────┘                              └──────────────────────────┘
 ```
 
-- **`backend/internal/calc`** — arithmetic as pure `func(float64…) (float64, error)`
+- **`backend/internal/calc`**, arithmetic as pure `func(float64…) (float64, error)`
   with sentinel domain errors. No HTTP awareness; 100 % test coverage.
-- **`backend/internal/httpapi`** — validates requests, maps domain errors to
+- **`backend/internal/httpapi`**, validates requests, maps domain errors to
   HTTP status codes (`400` = unparseable, `422` = semantically invalid), returns
   one consistent JSON envelope.
-- **`frontend/src`** — layered `domain → api → hooks → components`. Components
+- **`frontend/src`**, layered `domain → api → hooks → components`. Components
   are presentational; `useCalculator` owns state and the submit workflow.
 
 Deeper rationale lives in [`backend/README.md`](backend/README.md#design-decisions),
@@ -64,7 +64,7 @@ No databases, message brokers, or other services are required. The backend has
 
 ## Setup & running
 
-### Option A — Docker (whole stack, one command)
+### Option A: Docker (whole stack, one command)
 
 ```bash
 git clone https://github.com/tunahanibis/calculator-fullstack.git
@@ -77,7 +77,7 @@ Open **http://localhost:8080**. nginx serves the built SPA and reverse-proxies
 `/api` to the Go service, so only that one port is published. Stop with
 `Ctrl+C`, then `docker compose down` to remove the containers.
 
-### Option B — run each part from source
+### Option B: run each part from source
 
 Two terminals from the repo root.
 
@@ -144,8 +144,8 @@ Both parts run with zero configuration. To override, use environment variables
 | `POST /api/v1/power` | `{a, b}` | `a ^ b` |
 | `POST /api/v1/sqrt` | `{a}` | `√a` (rejects `a < 0`) |
 | `POST /api/v1/percentage` | `{a, b}` | `a` percent of `b` = `(a / 100) * b` |
-| `GET /healthz` | — | Liveness → `{"status":"ok"}` |
-| `GET /api/v1/operations` | — | Self-describing list of the above |
+| `GET /healthz` | n/a | Liveness → `{"status":"ok"}` |
+| `GET /api/v1/operations` | n/a | Self-describing list of the above |
 
 ### Successful calls
 
@@ -162,7 +162,7 @@ curl -s -X POST localhost:8080/api/v1/subtract -d '{"a": 4, "b": 10}'
 curl -s -X POST localhost:8080/api/v1/multiply -d '{"a": 6, "b": 7}'
 # {"operation":"multiply","a":6,"b":7,"result":42}
 
-# Division (repeating decimal — IEEE-754 float64)
+# Division (repeating decimal, IEEE-754 float64)
 curl -s -X POST localhost:8080/api/v1/divide -d '{"a": 22, "b": 7}'
 # {"operation":"divide","a":22,"b":7,"result":3.142857142857143}
 
@@ -170,11 +170,11 @@ curl -s -X POST localhost:8080/api/v1/divide -d '{"a": 22, "b": 7}'
 curl -s -X POST localhost:8080/api/v1/power -d '{"a": 2, "b": 10}'
 # {"operation":"power","a":2,"b":10,"result":1024}
 
-# Square root (unary — send only "a")
+# Square root (unary, send only "a")
 curl -s -X POST localhost:8080/api/v1/sqrt -d '{"a": 144}'
 # {"operation":"sqrt","a":144,"result":12}
 
-# Percentage — "15% of 200"
+# Percentage, "15% of 200"
 curl -s -X POST localhost:8080/api/v1/percentage -d '{"a": 15, "b": 200}'
 # {"operation":"percentage","a":15,"b":200,"result":30}
 ```
@@ -226,14 +226,14 @@ curl -s localhost:8080/api/v1/nope
 ## Testing
 
 ```bash
-# Backend — unit + httptest integration, race detector, coverage
+# Backend, unit + httptest integration, race detector, coverage
 cd backend
 go test -race ./...
 go test ./... -covermode=count -coverprofile=coverage.out
 go tool cover -func=coverage.out            # ~89 % total, calc pkg 100 %
 go tool cover -html=coverage.out            # line-by-line report
 
-# Frontend — Vitest + React Testing Library
+# Frontend, Vitest + React Testing Library
 cd frontend
 npm test                                     # 54 tests
 npm run coverage                             # 100 % statements/functions/lines
@@ -258,7 +258,7 @@ Docker images; and a smoke test that the composed stack answers
                                                                 ▼
                        ┌──────────── calculator-service (distroless) ────────────┐
                        │  Go binary, non-root, :8080, HEALTHCHECK "/server        │
-                       │  healthcheck" (self-probes GET /healthz — no shell)      │
+                       │  healthcheck" (self-probes GET /healthz, no shell)      │
                        └─────────────────────────────────────────────────────────┘
 ```
 
@@ -280,7 +280,7 @@ Image sizes: **backend 14.8 MB** (distroless), **frontend 74 MB** (nginx-alpine)
 ## Design decisions
 
 **The browser never does arithmetic.** Client-side validation is deliberately
-narrow — "is this a finite number?" — so there is exactly one place, the Go
+narrow, "is this a finite number?", so there is exactly one place, the Go
 service, where a rule like `2 / 0` is decided. This keeps the layers honest and
 the contract testable from both ends.
 
@@ -300,7 +300,7 @@ drives routing, the `/api/v1/operations` discovery endpoint, and the
 an operation is one row on each side plus one function in `calc`.
 
 **`400` vs `422`.** `400 INVALID_JSON` means "I can't parse this request".
-`422` means "I parsed it, but it doesn't make sense" — a well-formed body with a
+`422` means "I parsed it, but it doesn't make sense", a well-formed body with a
 missing operand, division by zero, a negative square root, or an overflowing
 result. Malformed bodies are rejected strictly: 1 KiB size cap, unknown fields
 refused, no trailing data, operands are `*float64` so a missing field differs
@@ -324,7 +324,7 @@ container healthcheck so the shell-less distroless image stays health-aware.
 
 **Accessibility.** The operation picker is a real `radiogroup`; inputs have
 `<label>`s and `aria-describedby` error links; the result is an `aria-live`
-region; the form submits on Enter. No component library — ~200 lines of
+region; the form submits on Enter. No component library, ~200 lines of
 hand-written CSS with a `prefers-color-scheme` dark theme (~63 kB gzipped JS).
 
 ---
@@ -345,7 +345,7 @@ hand-written CSS with a `prefers-color-scheme` dark theme (~63 kB gzipped JS).
   refresh.
 - **No arbitrary expression parsing.** There is no `"2 + 3 * 4"` endpoint; each
   operation is its own explicit route with two (or one) operands.
-- **Deployment shape:** the intended production topology is single-origin —
+- **Deployment shape:** the intended production topology is single-origin:
   nginx serves the SPA and proxies `/api` to the backend on the same host, so
   CORS is really only needed for local development (Vite on `:5173` calling the
   API on `:8080`).

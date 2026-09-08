@@ -40,7 +40,7 @@ function resolveView(props: Props): View {
     return { variant: "loading", label: null, value: "Calculating…" };
   }
 
-  return { variant: "idle", label: null, value: "—" };
+  return { variant: "idle", label: null, value: "Ready" };
 }
 
 /** The primary output area: placeholder, the formatted result, or an error. */

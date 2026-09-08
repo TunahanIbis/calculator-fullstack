@@ -6,7 +6,7 @@ export function App() {
       <header className="page__header">
         <h1 className="page__title">Calculator</h1>
         <p className="page__subtitle">
-          Every result is computed by the Go API — the browser only collects
+          Every result is computed by the Go API. The browser only collects
           input and renders the response.
         </p>
       </header>
