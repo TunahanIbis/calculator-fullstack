@@ -69,8 +69,8 @@ export function Calculator() {
       />
       <Keypad onAction={dispatch} />
       <p className="calculator__hint">
-        Keyboard works too: digits, <kbd>+ − × ÷</kbd>, <kbd>Enter</kbd>,{" "}
-        <kbd>Backspace</kbd>, <kbd>Esc</kbd>.
+        Keyboard: <kbd>0-9</kbd> <kbd>+ - * /</kbd> <kbd>Enter</kbd>{" "}
+        <kbd>Bksp</kbd> <kbd>Esc</kbd>
       </p>
       <HistoryList entries={calc.history} onClear={calc.clearHistory} />
     </div>

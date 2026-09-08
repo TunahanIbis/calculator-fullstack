@@ -71,13 +71,19 @@ body {
 /* ---- Page ---- */
 
 .page {
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 1.25rem;
+  /* Card width scales with the viewport height, so it grows on a big monitor
+     and stays compact on a short one, while never exceeding 92vw. */
+  width: min(92vw, clamp(17rem, 38vh, 24rem));
+  margin-inline: auto;
+  padding-block: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.8rem;
   min-height: 100vh;
+  /* Vertically centre the whole stack; fall back to top-aligned if it overflows. */
+  justify-content: safe center;
+  /* Size unit for the whole UI: 1cqw = 1% of this column's width. */
+  container-type: inline-size;
 }
 
 .page__header {
@@ -86,21 +92,19 @@ body {
 
 .page__title {
   margin: 0 0 0.25rem;
-  font-size: 1.6rem;
+  font-size: clamp(1.4rem, 8cqw, 1.9rem);
   letter-spacing: -0.02em;
 }
 
 .page__subtitle {
   margin: 0 auto;
-  max-width: 46ch;
   color: var(--text-muted);
-  font-size: 0.86rem;
+  font-size: clamp(0.8rem, 3.6cqw, 0.95rem);
 }
 
 .page__footer {
-  margin-top: auto;
   text-align: center;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
 .page__footer a {
@@ -114,10 +118,10 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 0.85rem;
+  padding: 4cqw;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 2.6cqw;
 }
 
 /* ---- Display ---- */
@@ -126,13 +130,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.2rem;
-  padding: 0.8rem 1rem;
-  border-radius: 10px;
+  gap: 1cqw;
+  padding: 4.5cqw 5cqw;
+  border-radius: 3cqw;
   background: var(--display-bg);
   color: var(--display-text);
   /* Rigid height: neither a long result nor a wrapped error may resize it. */
-  height: 5.25rem;
+  height: 28cqw;
   min-height: 0;
   flex: none;
   justify-content: flex-end;
@@ -140,10 +144,12 @@ body {
 }
 
 .display__expression {
-  /* Fixed block so an empty vs a populated line take the exact same space. */
+  /* min-height (not height) so the text is never clipped by its own box, but
+     an empty line still reserves the same space as a populated one. */
   display: block;
-  height: 1.2em;
-  font-size: 0.85rem;
+  min-height: 1.4em;
+  line-height: 1.4;
+  font-size: 4cqw;
   color: var(--display-muted);
   font-variant-numeric: tabular-nums;
   max-width: 100%;
@@ -152,7 +158,8 @@ body {
 }
 
 .display__value {
-  font-size: 1.75rem;
+  font-size: 9.5cqw;
+  line-height: 1.15;
   font-weight: 600;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -167,7 +174,7 @@ body {
 }
 
 .display--error .display__value {
-  font-size: 0.9rem;
+  font-size: 4.6cqw;
   font-weight: 500;
   line-height: 1.3;
   color: var(--error-text);
@@ -186,16 +193,16 @@ body {
 .keypad {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.4rem;
+  gap: 2.4cqw;
 }
 
 .key {
   font: inherit;
-  font-size: 1.1rem;
+  font-size: 5.8cqw;
   font-weight: 500;
-  padding: 0.5rem 0;
+  padding: 3cqw 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 2.6cqw;
   background: var(--surface-2);
   color: var(--text);
   cursor: pointer;
@@ -212,7 +219,7 @@ body {
 
 .key--fn {
   background: var(--surface-3);
-  font-size: 1rem;
+  font-size: 5cqw;
 }
 
 .key--op {
@@ -243,13 +250,17 @@ body {
 .calculator__hint {
   margin: 0;
   text-align: center;
-  font-size: 0.74rem;
+  font-size: 3cqw;
   color: var(--text-muted);
+  /* Always one line. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .calculator__hint kbd {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.7rem;
+  font-size: 0.9em;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 5px;
@@ -260,7 +271,7 @@ body {
 
 .history {
   border-top: 1px solid var(--border);
-  padding-top: 0.75rem;
+  padding-top: 0.6rem;
 }
 
 .history__head {
@@ -290,7 +301,7 @@ body {
 .history__empty {
   /* Same box as the populated list so the card never resizes. */
   margin: 0.5rem 0 0;
-  min-height: 5.4rem;
+  min-height: 4.6rem;
   font-size: 0.85rem;
   color: var(--text-muted);
 }
@@ -302,7 +313,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  min-height: 5.4rem;
+  min-height: 4.6rem;
 }
 
 .history__item {
