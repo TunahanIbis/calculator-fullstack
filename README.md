@@ -5,7 +5,7 @@ A calculator application split into two independently deployable parts:
 | Part                     | Stack                          | Tests                         |
 | ------------------------ | ------------------------------ | ----------------------------- |
 | [`backend/`](backend/)   | Go 1.23, standard library only | 27 test funcs · ~89 % (calc pkg 100 %) |
-| [`frontend/`](frontend/) | React 19 + TypeScript + Vite   | 67 tests · 100 % statements    |
+| [`frontend/`](frontend/) | React 19 + TypeScript + Vite   | 68 tests · 100 % statements    |
 
 The frontend is a keypad calculator with a live display and keyboard support,
 but **all arithmetic, including edge cases like division by zero, is performed
