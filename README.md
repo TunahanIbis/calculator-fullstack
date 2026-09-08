@@ -313,22 +313,26 @@ from an explicit `0`.
 `0 ^ -1`, …) returns `NON_FINITE_NUMBER` instead of emitting invalid JSON or a
 misleading number.
 
-**Frontend layering.** `domain/` (pure) → `api/` (a `fetch` wrapper that
-normalises every failure to a typed `ApiError` with a stable `code`) →
-`hooks/useCalculator` (all state + the submit workflow) → `components/`
-(presentational). Errors stay typed internally and are turned into sentences
-only at render time. Field-level problems show on the inputs; API-level problems
-show in the result panel.
+**Frontend layering.** `domain/` (a pure `calculatorMachine` reducer + a number
+formatter) → `api/` (a `fetch` wrapper that normalises every failure to a typed
+`ApiError` with a stable `code`) → `hooks/useCalculator` (runs the machine's
+emitted requests against the API, logs history, buffers keystrokes typed
+mid-request) → `components/` (Display, Keypad, HistoryList, Calculator). The
+machine does no arithmetic and no I/O, so every keypad/keyboard interaction is
+covered by fast DOM-free tests. Errors stay typed internally and become
+sentences only at render time.
 
 **Operational niceties.** Structured JSON logging (`log/slog`), one log line per
 request with status + latency, panic-recovery middleware, scoped CORS, HTTP
 read/write timeouts, signal-driven graceful shutdown, and a self-probing
 container healthcheck so the shell-less distroless image stays health-aware.
 
-**Accessibility.** The operation picker is a real `radiogroup`; inputs have
-`<label>`s and `aria-describedby` error links; the result is an `aria-live`
-region; the form submits on Enter. No component library, ~200 lines of
-hand-written CSS with a `prefers-color-scheme` dark theme (~63 kB gzipped JS).
+**Keyboard-first & accessible.** Keypad keys are real `<button>`s with
+`aria-label`s, the display is an `aria-live` `output`, and a global `keydown`
+handler maps the physical keyboard (`0-9 . , + - * / ^ %`, Enter, Backspace,
+Esc) to the same actions; both paths are tested. No component library, ~330
+lines of hand-written CSS with a `prefers-color-scheme` dark theme (~64 kB
+gzipped JS).
 
 ---
 
@@ -339,15 +343,18 @@ hand-written CSS with a `prefers-color-scheme` dark theme (~63 kB gzipped JS).
   frontend trims display noise (`0.1 + 0.2` → `0.3`) but the API returns the
   raw value. Arbitrary-precision math was out of scope.
 - **`percentage(a, b)` is defined as `(a / 100) * b`** ("a percent of b"), e.g.
-  `percentage(15, 200) = 30`. Documented on the endpoint and the UI label.
+  `percentage(15, 200) = 30`. On the keypad it is a binary operator: `15 % 200 =`.
 - **`power` accepts any real exponent**; results that overflow `float64` or are
   undefined (e.g. `0 ^ -1`, `(-1) ^ 0.5`) return `NON_FINITE_NUMBER` rather than
   an error specific to the operation.
 - **Stateless service.** No persistence, no accounts, no rate limiting, no
   auth. Calculation history lives in the browser tab only and is lost on
   refresh.
-- **No arbitrary expression parsing.** There is no `"2 + 3 * 4"` endpoint; each
-  operation is its own explicit route with two (or one) operands.
+- **No expression parsing, no precedence.** There is no `"2 + 3 * 4"` endpoint;
+  each operation is its own explicit route with two (or one) operands. The
+  keypad chains steps **left to right like a pocket calculator**, so
+  `2 + 3 × 4 =` is `20`. A precedence/parenthesis evaluator was deliberately
+  left out (the brief asks to prioritise correctness over extra features).
 - **Deployment shape:** the intended production topology is single-origin:
   nginx serves the SPA and proxies `/api` to the backend on the same host, so
   CORS is really only needed for local development (Vite on `:5173` calling the
