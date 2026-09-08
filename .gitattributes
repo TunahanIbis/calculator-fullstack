@@ -1,0 +1,7 @@
+# Normalise line endings so checkouts are identical across OSes.
+* text=auto eol=lf
+
+# Binary / generated — never touch.
+*.png binary
+*.jpg binary
+*.ico binary

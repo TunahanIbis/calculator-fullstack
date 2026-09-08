@@ -1,0 +1,197 @@
+openapi: 3.1.0
+info:
+  title: Calculator Service API
+  version: "1.0.0"
+  description: |
+    A small stateless microservice that performs basic and advanced arithmetic.
+    Every operation is a `POST` with a JSON body and returns a JSON result.
+    Errors always use the same envelope: `{ "error": { "code", "message" } }`.
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: operations
+    description: Arithmetic operations
+  - name: meta
+    description: Health and discovery
+
+paths:
+  /healthz:
+    get:
+      tags: [meta]
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+
+  /api/v1/operations:
+    get:
+      tags: [meta]
+      summary: List the available operations (self-describing API)
+      responses:
+        "200":
+          description: The operation catalogue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  operations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name: { type: string, example: divide }
+                        method: { type: string, example: POST }
+                        path: { type: string, example: /api/v1/divide }
+                        arity: { type: integer, enum: [1, 2], example: 2 }
+                        description: { type: string }
+                        example: { type: string, example: '{"a": 10, "b": 3}' }
+
+  /api/v1/add:
+    post:
+      tags: [operations]
+      summary: Add two numbers (a + b)
+      requestBody: { $ref: "#/components/requestBodies/Binary" }
+      responses:
+        "200": { $ref: "#/components/responses/Result" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/v1/subtract:
+    post:
+      tags: [operations]
+      summary: Subtract b from a (a - b)
+      requestBody: { $ref: "#/components/requestBodies/Binary" }
+      responses:
+        "200": { $ref: "#/components/responses/Result" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/v1/multiply:
+    post:
+      tags: [operations]
+      summary: Multiply two numbers (a * b)
+      requestBody: { $ref: "#/components/requestBodies/Binary" }
+      responses:
+        "200": { $ref: "#/components/responses/Result" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/v1/divide:
+    post:
+      tags: [operations]
+      summary: Divide a by b (a / b)
+      description: Returns `422 DIVISION_BY_ZERO` when `b` is `0`.
+      requestBody: { $ref: "#/components/requestBodies/Binary" }
+      responses:
+        "200": { $ref: "#/components/responses/Result" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/v1/power:
+    post:
+      tags: [operations]
+      summary: Raise a to the power b (a ^ b)
+      requestBody: { $ref: "#/components/requestBodies/Binary" }
+      responses:
+        "200": { $ref: "#/components/responses/Result" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/v1/sqrt:
+    post:
+      tags: [operations]
+      summary: Square root of a
+      description: Returns `422 NEGATIVE_SQRT` when `a < 0`. Send only `a`.
+      requestBody: { $ref: "#/components/requestBodies/Unary" }
+      responses:
+        "200": { $ref: "#/components/responses/Result" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/v1/percentage:
+    post:
+      tags: [operations]
+      summary: a percent of b, i.e. (a / 100) * b
+      requestBody: { $ref: "#/components/requestBodies/Binary" }
+      responses:
+        "200": { $ref: "#/components/responses/Result" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+components:
+  requestBodies:
+    Binary:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [a, b]
+            additionalProperties: false
+            properties:
+              a: { type: number, example: 10 }
+              b: { type: number, example: 3 }
+    Unary:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [a]
+            additionalProperties: false
+            properties:
+              a: { type: number, example: 144 }
+
+  responses:
+    Result:
+      description: The calculation result
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              operation: { type: string, example: divide }
+              a: { type: number, example: 10 }
+              b: { type: number, example: 3, description: Omitted for unary operations }
+              result: { type: number, example: 3.3333333333333335 }
+    BadRequest:
+      description: Malformed request (bad JSON, wrong types, unknown fields)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unprocessable:
+      description: Well-formed request that is mathematically or semantically invalid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+                - INVALID_JSON
+                - VALIDATION_ERROR
+                - DIVISION_BY_ZERO
+                - NEGATIVE_SQRT
+                - NON_FINITE_NUMBER
+                - NOT_FOUND
+                - METHOD_NOT_ALLOWED
+                - INTERNAL_ERROR
+            message: { type: string }
