@@ -8,7 +8,7 @@ interface Props {
   onClear: () => void;
 }
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 4;
 
 /** A most-recent-first log of successful calculations, paginated. */
 export function HistoryList({ entries, onClear }: Props) {

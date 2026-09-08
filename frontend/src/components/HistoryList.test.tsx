@@ -19,12 +19,12 @@ describe("<HistoryList />", () => {
     expect(screen.queryByRole("button", { name: /clear/i })).not.toBeInTheDocument();
   });
 
-  it("shows five entries per page and pages through the rest", async () => {
+  it("pages the list, newest first", async () => {
     const u = userEvent.setup();
     render(<HistoryList entries={make(7)} onClear={() => {}} />);
     const region = screen.getByRole("region", { name: /history/i });
 
-    // Page 1: newest five (7..3).
+    // Page 1: the newest entries; the oldest are on page 2.
     expect(within(region).getByText("7 + 0")).toBeInTheDocument();
     expect(within(region).queryByText("2 + 0")).not.toBeInTheDocument();
     expect(within(region).getByText("1 / 2")).toBeInTheDocument();

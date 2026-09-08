@@ -71,12 +71,12 @@ body {
 /* ---- Page ---- */
 
 .page {
-  max-width: 420px;
+  max-width: 400px;
   margin: 0 auto;
-  padding: 2.5rem 1.25rem 3rem;
+  padding: 1.5rem 1rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.85rem;
   min-height: 100vh;
 }
 
@@ -85,16 +85,16 @@ body {
 }
 
 .page__title {
-  margin: 0 0 0.35rem;
-  font-size: 1.9rem;
+  margin: 0 0 0.25rem;
+  font-size: 1.6rem;
   letter-spacing: -0.02em;
 }
 
 .page__subtitle {
   margin: 0 auto;
-  max-width: 40ch;
+  max-width: 46ch;
   color: var(--text-muted);
-  font-size: 0.94rem;
+  font-size: 0.86rem;
 }
 
 .page__footer {
@@ -114,10 +114,10 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1rem;
+  padding: 0.85rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.55rem;
 }
 
 /* ---- Display ---- */
@@ -126,34 +126,38 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.35rem;
-  padding: 1.1rem 1.2rem;
-  border-radius: 12px;
+  gap: 0.2rem;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
   background: var(--display-bg);
   color: var(--display-text);
-  /* Fixed height: a long result or a wrapped error must never resize the card. */
-  height: 6.5rem;
+  /* Rigid height: neither a long result nor a wrapped error may resize it. */
+  height: 5.25rem;
+  min-height: 0;
+  flex: none;
   justify-content: flex-end;
   overflow: hidden;
 }
 
 .display__expression {
-  font-size: 0.95rem;
+  /* Fixed block so an empty vs a populated line take the exact same space. */
+  display: block;
+  height: 1.2em;
+  font-size: 0.85rem;
   color: var(--display-muted);
   font-variant-numeric: tabular-nums;
-  min-height: 1.2em;
   max-width: 100%;
-  overflow-x: auto;
+  overflow: hidden;
   white-space: nowrap;
 }
 
 .display__value {
-  font-size: 2.4rem;
+  font-size: 1.75rem;
   font-weight: 600;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   max-width: 100%;
-  overflow-x: auto;
+  overflow: hidden;
   white-space: nowrap;
   animation: value-in 0.16s ease both;
 }
@@ -163,7 +167,7 @@ body {
 }
 
 .display--error .display__value {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   line-height: 1.3;
   color: var(--error-text);
@@ -182,16 +186,16 @@ body {
 .keypad {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .key {
   font: inherit;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 500;
-  padding: 0.9rem 0;
+  padding: 0.5rem 0;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--surface-2);
   color: var(--text);
   cursor: pointer;
@@ -208,7 +212,7 @@ body {
 
 .key--fn {
   background: var(--surface-3);
-  font-size: 1.05rem;
+  font-size: 1rem;
 }
 
 .key--op {
@@ -237,15 +241,15 @@ body {
 }
 
 .calculator__hint {
-  margin: -0.25rem 0 0;
+  margin: 0;
   text-align: center;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
 }
 
 .calculator__hint kbd {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 5px;
@@ -256,7 +260,7 @@ body {
 
 .history {
   border-top: 1px solid var(--border);
-  padding-top: 1rem;
+  padding-top: 0.75rem;
 }
 
 .history__head {
@@ -285,20 +289,20 @@ body {
 
 .history__empty {
   /* Same box as the populated list so the card never resizes. */
-  margin: 0.6rem 0 0;
-  min-height: 7.4rem;
-  font-size: 0.88rem;
+  margin: 0.5rem 0 0;
+  min-height: 5.4rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
 }
 
 .history__list {
   list-style: none;
-  margin: 0.6rem 0 0;
+  margin: 0.5rem 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  min-height: 7.4rem;
+  gap: 0.3rem;
+  min-height: 5.4rem;
 }
 
 .history__item {
@@ -306,7 +310,7 @@ body {
   gap: 0.5rem;
   align-items: baseline;
   font-variant-numeric: tabular-nums;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   animation: history-in 0.2s ease both;
 }
 

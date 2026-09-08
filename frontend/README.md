@@ -51,7 +51,7 @@ precedence and no parentheses.
 - **Keyboard:** `0`–`9`, `.` / `,`, `+ - * / ^ %`, `Enter` / `=`, `Backspace`,
   `Esc` / `Delete`. Keystrokes carrying a modifier (Ctrl/⌘/Alt) are ignored so
   browser shortcuts still work.
-- Every completed step is logged to a paginated **history** (5 per page).
+- Every completed step is logged to a paginated **history** (4 per page).
 
 Each press is one API call. A division by zero, a negative square root, or an
 overflow comes back from the server as a friendly message on the display; the
@@ -117,7 +117,7 @@ All files          |   100   |   ~95    |   100   |   100
   keystrokes typed **while a chained step is still resolving are buffered and
   replayed** (a deferred promise proves `25×18+40=` never loses a digit).
 - **`components/Keypad`**, every key renders and emits the right action.
-- **`components/HistoryList`**, empty state, 5-per-page pagination, newer /
+- **`components/HistoryList`**, empty state, 4-per-page pagination, newer /
   older navigation, `onClear`.
 - **`components/Calculator`**, full render: click and keyboard entry, the
   formatted result and expression line, division-by-zero shows the friendly
